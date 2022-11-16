@@ -2,6 +2,23 @@ controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
     colInc = 0
     rowInc = -1
 })
+function moveRandomly () {
+    if (randint(-100, 100) > 0) {
+        if (randint(-100, 100) > 0) {
+            colInc = 1
+        } else {
+            colInc = -1
+        }
+        rowInc = 0
+    } else {
+        colInc = 0
+        if (randint(-100, 100) > 0) {
+            rowInc = 1
+        } else {
+            rowInc = -1
+        }
+    }
+}
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
     colInc = -1
     rowInc = 0
@@ -54,6 +71,13 @@ function checkCollision () {
         game.over(false)
     }
 }
+function doQLearningStep () {
+    if (randint(0, 100) < 50) {
+        moveRandomly()
+    } else {
+    	
+    }
+}
 controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
     colInc = 0
     rowInc = 1
@@ -69,7 +93,7 @@ let listSnake: tiles.Location[] = []
 info.setScore(0)
 listSnake = []
 tiles.setCurrentTilemap(tilemap`level1`)
-listSnake.unshift(tiles.getTileLocation(2, 2))
+listSnake.unshift(tiles.getTileLocation(4, 4))
 snakeHead = sprites.create(img`
     . . 7 7 7 7 7 7 7 7 7 7 7 7 . . 
     . 7 7 7 7 7 7 7 7 7 7 7 7 7 7 . 
@@ -99,4 +123,5 @@ game.onUpdateInterval(350, function () {
     eatFood()
     moveSnake()
     snakeHead.sayText(getStateIdx())
+    doQLearningStep()
 })
