@@ -95,8 +95,8 @@ tiles.setTileAt(tiles.getTileLocation(randint(2, 11), randint(2, 9)), assets.til
 rowInc = 1
 colInc = 0
 game.onUpdateInterval(350, function () {
-    snakeHead.sayText(getStateIdx())
     checkCollision()
     eatFood()
     moveSnake()
+    snakeHead.sayText(getStateIdx())
 })
