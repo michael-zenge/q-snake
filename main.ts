@@ -91,7 +91,7 @@ snakeHead = sprites.create(img`
 scene.cameraFollowSprite(snakeHead)
 tiles.placeOnTile(snakeHead, listSnake[0])
 listSnake.unshift(snakeHead.tilemapLocation())
-tiles.setTileAt(tiles.getTileLocation(randint(2, 11), randint(2, 9)), assets.tile`myTile`)
+tiles.setTileAt(tiles.getTileLocation(randint(2, 11), randint(2, 9)), assets.tile`myTile1`)
 rowInc = 1
 colInc = 0
 game.onUpdateInterval(350, function () {
