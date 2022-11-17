@@ -1,6 +1,18 @@
 controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
     doAction(4)
 })
+function initQTable () {
+    lQ = []
+    for (let index = 0; index < 1024; index++) {
+        lQ.push([
+        1,
+        0,
+        0,
+        0,
+        0
+        ])
+    }
+}
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
     doAction(2)
 })
@@ -33,29 +45,22 @@ function getState (colOffset: number, rowOffset: number, basis: number) {
     }
 }
 function moveSnake () {
-    for (let index = 0; index <= listSnake.length - 1; index++) {
-        if (index == 0) {
-            tiles.setTileAt(listSnake[index], assets.tile`myTile0`)
+    for (let index2 = 0; index2 <= listSnake.length - 1; index2++) {
+        if (index2 == 0) {
+            tiles.setTileAt(listSnake[index2], assets.tile`myTile0`)
         }
-        if (index == listSnake.length - 1) {
-            listSnake[index] = tiles.getTileLocation(listSnake[index].column + colInc, listSnake[index].row + rowInc)
-            tiles.placeOnTile(snakeHead, listSnake[index])
+        if (index2 == listSnake.length - 1) {
+            listSnake[index2] = tiles.getTileLocation(listSnake[index2].column + colInc, listSnake[index2].row + rowInc)
+            tiles.placeOnTile(snakeHead, listSnake[index2])
         } else {
-            listSnake[index] = tiles.getTileLocation(listSnake[index + 1].column, listSnake[index + 1].row)
-            tiles.setTileAt(listSnake[index], assets.tile`myTile`)
+            listSnake[index2] = tiles.getTileLocation(listSnake[index2 + 1].column, listSnake[index2 + 1].row)
+            tiles.setTileAt(listSnake[index2], assets.tile`myTile`)
         }
     }
 }
 function checkCollision () {
     if (tiles.tileAtLocationEquals(snakeHead.tilemapLocation(), assets.tile`Wall`) || tiles.tileAtLocationEquals(snakeHead.tilemapLocation(), assets.tile`myTile`)) {
         game.over(false)
-    }
-}
-function doQLearningStep () {
-    if (randint(0, 100) < 50) {
-        doAction(randint(0, 4))
-    } else {
-    	
     }
 }
 controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
@@ -86,12 +91,24 @@ function doAction (Idx: number) {
     }
     return false
 }
-let tmpLocation: tiles.Location = null
-let colInc = 0
+function doQAction (StateIdx: number) {
+    iMaxIdx = 0
+    for (let index3 = 0; index3 <= 4; index3++) {
+        if (lQ[StateIdx][index3] > iMaxIdx) {
+            iMaxIdx = index3
+        }
+    }
+    doAction(iMaxIdx)
+}
+let iMaxIdx = 0
 let rowInc = 0
+let colInc = 0
+let tmpLocation: tiles.Location = null
+let lQ: number[][] = []
 let snakeHead: Sprite = null
 let listSnake: tiles.Location[] = []
 info.setScore(0)
+initQTable()
 listSnake = []
 tiles.setCurrentTilemap(tilemap`level1`)
 listSnake.unshift(tiles.getTileLocation(4, 4))
@@ -117,12 +134,15 @@ scene.cameraFollowSprite(snakeHead)
 tiles.placeOnTile(snakeHead, listSnake[0])
 listSnake.unshift(snakeHead.tilemapLocation())
 tiles.setTileAt(tiles.getTileLocation(randint(2, 11), randint(2, 9)), assets.tile`myTile1`)
-rowInc = 1
-colInc = 0
+doAction(3)
 game.onUpdateInterval(350, function () {
-    checkCollision()
-    eatFood()
+    if (randint(0, 100) < 50) {
+        doAction(randint(0, 4))
+    } else {
+        doQAction(getStateIdx())
+    }
     moveSnake()
     snakeHead.sayText(getStateIdx())
-    doQLearningStep()
+    checkCollision()
+    eatFood()
 })
