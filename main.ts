@@ -81,7 +81,7 @@ function resetSnake () {
 }
 function checkCollision () {
     if (tiles.tileAtLocationEquals(snakeHead.tilemapLocation(), assets.tile`Wall`) || tiles.tileAtLocationEquals(snakeHead.tilemapLocation(), assets.tile`myTile`)) {
-        scene.cameraShake(3, 500)
+        pause(2000)
         resetSnake()
     }
 }
@@ -116,7 +116,7 @@ function doAction (Idx: number) {
 function doQAction (StateIdx: number) {
     iMaxIdx = 0
     for (let index3 = 0; index3 <= 4; index3++) {
-        if (lQ[StateIdx][index3] > iMaxIdx) {
+        if (lQ[StateIdx][index3] > lQ[StateIdx][iMaxIdx]) {
             iMaxIdx = index3
         }
     }
@@ -124,6 +124,7 @@ function doQAction (StateIdx: number) {
 }
 function doQUpdate (stateIdx: number, actionIdx: number, reward: number, alpha: number) {
     lQ[stateIdx][actionIdx] = (1 - alpha) * lQ[stateIdx][actionIdx] + alpha * reward
+    console.log(lQ[stateIdx])
 }
 let currActionIdx = 0
 let currStateIdx = 0
@@ -165,6 +166,6 @@ game.onUpdateInterval(350, function () {
     checkCollision()
     eatFood()
     moveSnake()
-    snakeHead.sayText(getReward(getStateIdx()))
+    snakeHead.sayText("" + currStateIdx + "," + currActionIdx)
     doQUpdate(currStateIdx, currActionIdx, getReward(getStateIdx()), 0.2)
 })

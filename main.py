@@ -109,7 +109,7 @@ def checkCollision():
         assets.tile("""
             myTile
         """)):
-        scene.camera_shake(3, 500)
+        pause(2000)
         resetSnake()
 
 def on_down_pressed():
@@ -143,11 +143,12 @@ def doQAction(StateIdx: number):
     global iMaxIdx
     iMaxIdx = 0
     for index3 in range(5):
-        if lQ[StateIdx][index3] > iMaxIdx:
+        if lQ[StateIdx][index3] > lQ[StateIdx][iMaxIdx]:
             iMaxIdx = index3
     return doAction(iMaxIdx)
 def doQUpdate(stateIdx2: number, actionIdx: number, reward: number, alpha: number):
     lQ[stateIdx2][actionIdx] = (1 - alpha) * lQ[stateIdx2][actionIdx] + alpha * reward
+    print(lQ[stateIdx2])
 currActionIdx = 0
 currStateIdx = 0
 iMaxIdx = 0
@@ -190,6 +191,6 @@ def on_update_interval():
     checkCollision()
     eatFood()
     moveSnake()
-    snakeHead.say_text(getReward(getStateIdx()))
+    snakeHead.say_text("" + str(currStateIdx) + "," + str(currActionIdx))
     doQUpdate(currStateIdx, currActionIdx, getReward(getStateIdx()), 0.2)
 game.on_update_interval(350, on_update_interval)
