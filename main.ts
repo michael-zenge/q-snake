@@ -1,27 +1,8 @@
 controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
-    colInc = 0
-    rowInc = -1
+    doAction(4)
 })
-function moveRandomly () {
-    if (randint(-100, 100) > 0) {
-        if (randint(-100, 100) > 0) {
-            colInc = 1
-        } else {
-            colInc = -1
-        }
-        rowInc = 0
-    } else {
-        colInc = 0
-        if (randint(-100, 100) > 0) {
-            rowInc = 1
-        } else {
-            rowInc = -1
-        }
-    }
-}
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
-    colInc = -1
-    rowInc = 0
+    doAction(2)
 })
 function eatFood () {
     if (tiles.tileAtLocationEquals(snakeHead.tilemapLocation(), assets.tile`myTile1`)) {
@@ -38,8 +19,7 @@ function eatFood () {
     }
 }
 controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
-    colInc = 1
-    rowInc = 0
+    doAction(1)
 })
 function getState (colOffset: number, rowOffset: number, basis: number) {
     if (tiles.tileAtLocationEquals(tiles.getTileLocation(snakeHead.tilemapLocation().column + colOffset, snakeHead.tilemapLocation().row + rowOffset), assets.tile`myTile1`)) {
@@ -73,17 +53,38 @@ function checkCollision () {
 }
 function doQLearningStep () {
     if (randint(0, 100) < 50) {
-        moveRandomly()
+        doAction(randint(0, 4))
     } else {
     	
     }
 }
 controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
-    colInc = 0
-    rowInc = 1
+    doAction(3)
 })
 function getStateIdx () {
     return getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1))))
+}
+function doAction (Idx: number) {
+    if (Idx == 4) {
+        colInc = 0
+        rowInc = -1
+        return true
+    } else if (Idx == 3) {
+        colInc = 0
+        rowInc = 1
+        return true
+    } else if (Idx == 2) {
+        colInc = -1
+        rowInc = 0
+        return true
+    } else if (Idx == 1) {
+        colInc = 1
+        rowInc = 0
+        return true
+    } else {
+        return true
+    }
+    return false
 }
 let tmpLocation: tiles.Location = null
 let colInc = 0
