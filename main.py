@@ -6,7 +6,18 @@ def initQTable():
     global lQ
     lQ = []
     for index in range(1024):
-        lQ.append([1, 0, 0, 0, 0])
+        lQ.append([0, 0, 0, 0, 0])
+
+def on_a_pressed():
+    game.over(True)
+controller.A.on_event(ControllerButtonEvent.PRESSED, on_a_pressed)
+
+def getReward(stateIdx: number):
+    if stateIdx >= 512:
+        return -1
+    elif stateIdx >= 256:
+        return 1
+    return 0
 
 def on_left_pressed():
     doAction(2)
@@ -76,6 +87,21 @@ def moveSnake():
                 myTile
             """))
         index2 += 1
+def resetSnake():
+    global listSnake
+    info.set_score(0)
+    tiles.set_current_tilemap(tilemap("""
+        level1
+    """))
+    tiles.set_tile_at(tiles.get_tile_location(randint(2, 11), randint(2, 9)),
+        assets.tile("""
+            myTile1
+        """))
+    listSnake = []
+    listSnake.unshift(tiles.get_tile_location(4, 4))
+    tiles.place_on_tile(snakeHead, listSnake[0])
+    listSnake.unshift(snakeHead.tilemap_location())
+    doAction(3)
 def checkCollision():
     if tiles.tile_at_location_equals(snakeHead.tilemap_location(), assets.tile("""
         Wall
@@ -83,7 +109,8 @@ def checkCollision():
         assets.tile("""
             myTile
         """)):
-        game.over(False)
+        scene.camera_shake(3, 500)
+        resetSnake()
 
 def on_down_pressed():
     doAction(3)
@@ -96,43 +123,41 @@ def doAction(Idx: number):
     if Idx == 4:
         colInc = 0
         rowInc = -1
-        return True
+        return Idx
     elif Idx == 3:
         colInc = 0
         rowInc = 1
-        return True
+        return Idx
     elif Idx == 2:
         colInc = -1
         rowInc = 0
-        return True
+        return Idx
     elif Idx == 1:
         colInc = 1
         rowInc = 0
-        return True
+        return Idx
     else:
-        return True
-    return False
+        return Idx
+    return -1
 def doQAction(StateIdx: number):
     global iMaxIdx
     iMaxIdx = 0
     for index3 in range(5):
         if lQ[StateIdx][index3] > iMaxIdx:
             iMaxIdx = index3
-    doAction(iMaxIdx)
+    return doAction(iMaxIdx)
+def doQUpdate(stateIdx2: number, actionIdx: number, reward: number, alpha: number):
+    lQ[stateIdx2][actionIdx] = (1 - alpha) * lQ[stateIdx2][actionIdx] + alpha * reward
+currActionIdx = 0
+currStateIdx = 0
 iMaxIdx = 0
 rowInc = 0
 colInc = 0
+listSnake: List[tiles.Location] = []
 tmpLocation: tiles.Location = None
 lQ: List[List[number]] = []
 snakeHead: Sprite = None
-listSnake: List[tiles.Location] = []
-info.set_score(0)
 initQTable()
-listSnake = []
-tiles.set_current_tilemap(tilemap("""
-    level1
-"""))
-listSnake.unshift(tiles.get_tile_location(4, 4))
 snakeHead = sprites.create(img("""
         . . 7 7 7 7 7 7 7 7 7 7 7 7 . . 
             . 7 7 7 7 7 7 7 7 7 7 7 7 7 7 . 
@@ -153,21 +178,18 @@ snakeHead = sprites.create(img("""
     """),
     SpriteKind.player)
 scene.camera_follow_sprite(snakeHead)
-tiles.place_on_tile(snakeHead, listSnake[0])
-listSnake.unshift(snakeHead.tilemap_location())
-tiles.set_tile_at(tiles.get_tile_location(randint(2, 11), randint(2, 9)),
-    assets.tile("""
-        myTile1
-    """))
-doAction(3)
+resetSnake()
 
 def on_update_interval():
-    if False and randint(0, 100) < 50:
-        doAction(randint(0, 4))
+    global currStateIdx, currActionIdx
+    currStateIdx = getStateIdx()
+    if randint(0, 100) < 20:
+        currActionIdx = doAction(randint(0, 4))
     else:
-        doQAction(getStateIdx())
-    moveSnake()
-    snakeHead.say_text(getStateIdx())
+        currActionIdx = doQAction(currStateIdx)
     checkCollision()
     eatFood()
+    moveSnake()
+    snakeHead.say_text(getReward(getStateIdx()))
+    doQUpdate(currStateIdx, currActionIdx, getReward(getStateIdx()), 0.2)
 game.on_update_interval(350, on_update_interval)

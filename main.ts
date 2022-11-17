@@ -5,13 +5,24 @@ function initQTable () {
     lQ = []
     for (let index = 0; index < 1024; index++) {
         lQ.push([
-        1,
+        0,
         0,
         0,
         0,
         0
         ])
     }
+}
+controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
+    game.over(true)
+})
+function getReward (stateIdx: number) {
+    if (stateIdx >= 512) {
+        return -1
+    } else if (stateIdx >= 256) {
+        return 1
+    }
+    return 0
 }
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
     doAction(2)
@@ -58,9 +69,20 @@ function moveSnake () {
         }
     }
 }
+function resetSnake () {
+    info.setScore(0)
+    tiles.setCurrentTilemap(tilemap`level1`)
+    tiles.setTileAt(tiles.getTileLocation(randint(2, 11), randint(2, 9)), assets.tile`myTile1`)
+    listSnake = []
+    listSnake.unshift(tiles.getTileLocation(4, 4))
+    tiles.placeOnTile(snakeHead, listSnake[0])
+    listSnake.unshift(snakeHead.tilemapLocation())
+    doAction(3)
+}
 function checkCollision () {
     if (tiles.tileAtLocationEquals(snakeHead.tilemapLocation(), assets.tile`Wall`) || tiles.tileAtLocationEquals(snakeHead.tilemapLocation(), assets.tile`myTile`)) {
-        game.over(false)
+        scene.cameraShake(3, 500)
+        resetSnake()
     }
 }
 controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
@@ -73,23 +95,23 @@ function doAction (Idx: number) {
     if (Idx == 4) {
         colInc = 0
         rowInc = -1
-        return true
+        return Idx
     } else if (Idx == 3) {
         colInc = 0
         rowInc = 1
-        return true
+        return Idx
     } else if (Idx == 2) {
         colInc = -1
         rowInc = 0
-        return true
+        return Idx
     } else if (Idx == 1) {
         colInc = 1
         rowInc = 0
-        return true
+        return Idx
     } else {
-        return true
+        return Idx
     }
-    return false
+    return -1
 }
 function doQAction (StateIdx: number) {
     iMaxIdx = 0
@@ -98,20 +120,21 @@ function doQAction (StateIdx: number) {
             iMaxIdx = index3
         }
     }
-    doAction(iMaxIdx)
+    return doAction(iMaxIdx)
 }
+function doQUpdate (stateIdx: number, actionIdx: number, reward: number, alpha: number) {
+    lQ[stateIdx][actionIdx] = (1 - alpha) * lQ[stateIdx][actionIdx] + alpha * reward
+}
+let currActionIdx = 0
+let currStateIdx = 0
 let iMaxIdx = 0
 let rowInc = 0
 let colInc = 0
+let listSnake: tiles.Location[] = []
 let tmpLocation: tiles.Location = null
 let lQ: number[][] = []
 let snakeHead: Sprite = null
-let listSnake: tiles.Location[] = []
-info.setScore(0)
 initQTable()
-listSnake = []
-tiles.setCurrentTilemap(tilemap`level1`)
-listSnake.unshift(tiles.getTileLocation(4, 4))
 snakeHead = sprites.create(img`
     . . 7 7 7 7 7 7 7 7 7 7 7 7 . . 
     . 7 7 7 7 7 7 7 7 7 7 7 7 7 7 . 
@@ -131,18 +154,17 @@ snakeHead = sprites.create(img`
     . . 7 7 7 7 7 7 7 7 7 7 7 7 . . 
     `, SpriteKind.Player)
 scene.cameraFollowSprite(snakeHead)
-tiles.placeOnTile(snakeHead, listSnake[0])
-listSnake.unshift(snakeHead.tilemapLocation())
-tiles.setTileAt(tiles.getTileLocation(randint(2, 11), randint(2, 9)), assets.tile`myTile1`)
-doAction(3)
+resetSnake()
 game.onUpdateInterval(350, function () {
-    if (randint(0, 100) < 50) {
-        doAction(randint(0, 4))
+    currStateIdx = getStateIdx()
+    if (randint(0, 100) < 20) {
+        currActionIdx = doAction(randint(0, 4))
     } else {
-        doQAction(getStateIdx())
+        currActionIdx = doQAction(currStateIdx)
     }
-    moveSnake()
-    snakeHead.sayText(getStateIdx())
     checkCollision()
     eatFood()
+    moveSnake()
+    snakeHead.sayText(getReward(getStateIdx()))
+    doQUpdate(currStateIdx, currActionIdx, getReward(getStateIdx()), 0.2)
 })
