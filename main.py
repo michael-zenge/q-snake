@@ -5,7 +5,7 @@ controller.up.on_event(ControllerButtonEvent.PRESSED, on_up_pressed)
 def initQTable():
     global lQ
     lQ = []
-    for index in range(1024):
+    for index in range(4096):
         lQ.append([0, 0, 0, 0])
 
 def on_a_pressed():
@@ -13,23 +13,40 @@ def on_a_pressed():
 controller.A.on_event(ControllerButtonEvent.PRESSED, on_a_pressed)
 
 def getReward(stateIdx: number, actionIdx: number):
-    if stateIdx >= 512:
+    if stateIdx >= 3072:
+        if stateIdx - 3072 >= 512:
+            return -10
+        elif stateIdx - 3072 >= 256:
+            return 10
+        elif actionIdx == 2 or actionIdx == 1:
+            return 1
+        else:
+            return -1
+    elif stateIdx >= 2048:
+        if stateIdx - 2048 >= 512:
+            return -10
+        elif stateIdx - 2048 >= 256:
+            return 10
+        elif actionIdx == 2 or actionIdx == 0:
+            return 1
+        else:
+            return -1
+    elif stateIdx >= 1024:
+        if stateIdx - 1024 >= 512:
+            return -10
+        elif stateIdx - 1024 >= 256:
+            return 10
+        elif actionIdx == 3 or actionIdx == 0:
+            return 1
+        else:
+            return -1
+    elif stateIdx - 0 >= 512:
         return -10
-    elif stateIdx >= 256:
+    elif stateIdx - 0 >= 256:
         return 10
+    elif actionIdx == 3 or actionIdx == 1:
+        return 1
     else:
-        if snakeHead.tilemap_location().column > snakeFood.tilemap_location().column and snakeHead.tilemap_location().row > snakeFood.tilemap_location().row:
-            if actionIdx == 3 or actionIdx == 1:
-                return 1
-        elif snakeHead.tilemap_location().column < snakeFood.tilemap_location().column and snakeHead.tilemap_location().row > snakeFood.tilemap_location().row:
-            if actionIdx == 3 or actionIdx == 0:
-                return 1
-        elif snakeHead.tilemap_location().column < snakeFood.tilemap_location().column and snakeHead.tilemap_location().row < snakeFood.tilemap_location().row:
-            if actionIdx == 2 or actionIdx == 0:
-                return 1
-        elif snakeHead.tilemap_location().column > snakeFood.tilemap_location().column and snakeHead.tilemap_location().row < snakeFood.tilemap_location().row:
-            if actionIdx == 2 or actionIdx == 1:
-                return 1
         return -1
 
 def on_left_pressed():
@@ -87,6 +104,7 @@ def getState(colOffset: number, rowOffset: number, base: number):
         return 0
 def moveSnake():
     global index2
+    index2 = 0
     while index2 <= len(listSnake) - 1:
         if index2 == 0:
             tiles.set_tile_at(listSnake[index2], assets.tile("""
@@ -126,7 +144,7 @@ def checkCollision():
             myTile
         """)):
         info.change_score_by(1)
-        pause(500)
+        pause(100)
         resetSnake()
 
 def on_down_pressed():
@@ -134,7 +152,15 @@ def on_down_pressed():
 controller.down.on_event(ControllerButtonEvent.PRESSED, on_down_pressed)
 
 def getStateIdx():
-    return getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1))))
+    if snakeHead.tilemap_location().column >= snakeFood.tilemap_location().column and snakeHead.tilemap_location().row >= snakeFood.tilemap_location().row:
+        return 0 + (getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1)))))
+    elif snakeHead.tilemap_location().column < snakeFood.tilemap_location().column and snakeHead.tilemap_location().row >= snakeFood.tilemap_location().row:
+        return 1024 + (getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1)))))
+    elif snakeHead.tilemap_location().column < snakeFood.tilemap_location().column and snakeHead.tilemap_location().row < snakeFood.tilemap_location().row:
+        return 2048 + (getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1)))))
+    elif snakeHead.tilemap_location().column >= snakeFood.tilemap_location().column and snakeHead.tilemap_location().row < snakeFood.tilemap_location().row:
+        return 3072 + (getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1)))))
+    return 0
 def doAction(Idx: number):
     global colInc, rowInc
     if Idx == 3:

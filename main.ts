@@ -3,7 +3,7 @@ controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
 })
 function initQTable () {
     lQ = []
-    for (let index = 0; index < 1024; index++) {
+    for (let index = 0; index < 4096; index++) {
         lQ.push([
         0,
         0,
@@ -16,28 +16,43 @@ controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     game.over(true)
 })
 function getReward (stateIdx: number, actionIdx: number) {
-    if (stateIdx >= 512) {
-        return -10
-    } else if (stateIdx >= 256) {
-        return 10
-    } else {
-        if (snakeHead.tilemapLocation().column > snakeFood.tilemapLocation().column && snakeHead.tilemapLocation().row > snakeFood.tilemapLocation().row) {
-            if (actionIdx == 3 || actionIdx == 1) {
-                return 1
-            }
-        } else if (snakeHead.tilemapLocation().column < snakeFood.tilemapLocation().column && snakeHead.tilemapLocation().row > snakeFood.tilemapLocation().row) {
-            if (actionIdx == 3 || actionIdx == 0) {
-                return 1
-            }
-        } else if (snakeHead.tilemapLocation().column < snakeFood.tilemapLocation().column && snakeHead.tilemapLocation().row < snakeFood.tilemapLocation().row) {
-            if (actionIdx == 2 || actionIdx == 0) {
-                return 1
-            }
-        } else if (snakeHead.tilemapLocation().column > snakeFood.tilemapLocation().column && snakeHead.tilemapLocation().row < snakeFood.tilemapLocation().row) {
-            if (actionIdx == 2 || actionIdx == 1) {
-                return 1
-            }
+    if (stateIdx >= 3072) {
+        if (stateIdx - 3072 >= 512) {
+            return -10
+        } else if (stateIdx - 3072 >= 256) {
+            return 10
+        } else if (actionIdx == 2 || actionIdx == 1) {
+            return 1
+        } else {
+            return -1
         }
+    } else if (stateIdx >= 2048) {
+        if (stateIdx - 2048 >= 512) {
+            return -10
+        } else if (stateIdx - 2048 >= 256) {
+            return 10
+        } else if (actionIdx == 2 || actionIdx == 0) {
+            return 1
+        } else {
+            return -1
+        }
+    } else if (stateIdx >= 1024) {
+        if (stateIdx - 1024 >= 512) {
+            return -10
+        } else if (stateIdx - 1024 >= 256) {
+            return 10
+        } else if (actionIdx == 3 || actionIdx == 0) {
+            return 1
+        } else {
+            return -1
+        }
+    } else if (stateIdx - 0 >= 512) {
+        return -10
+    } else if (stateIdx - 0 >= 256) {
+        return 10
+    } else if (actionIdx == 3 || actionIdx == 1) {
+        return 1
+    } else {
         return -1
     }
 }
@@ -73,6 +88,7 @@ function getState (colOffset: number, rowOffset: number, base: number) {
     }
 }
 function moveSnake () {
+    index2 = 0
     while (index2 <= listSnake.length - 1) {
         if (index2 == 0) {
             tiles.setTileAt(listSnake[index2], assets.tile`myTile0`)
@@ -100,7 +116,7 @@ function resetSnake () {
 function checkCollision () {
     if (tiles.tileAtLocationEquals(snakeHead.tilemapLocation(), assets.tile`Wall`) || tiles.tileAtLocationEquals(snakeHead.tilemapLocation(), assets.tile`myTile`)) {
         info.changeScoreBy(1)
-        pause(500)
+        pause(100)
         resetSnake()
     }
 }
@@ -108,7 +124,16 @@ controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
     doAction(2)
 })
 function getStateIdx () {
-    return getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1))))
+    if (snakeHead.tilemapLocation().column >= snakeFood.tilemapLocation().column && snakeHead.tilemapLocation().row >= snakeFood.tilemapLocation().row) {
+        return 0 + (getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1)))))
+    } else if (snakeHead.tilemapLocation().column < snakeFood.tilemapLocation().column && snakeHead.tilemapLocation().row >= snakeFood.tilemapLocation().row) {
+        return 1024 + (getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1)))))
+    } else if (snakeHead.tilemapLocation().column < snakeFood.tilemapLocation().column && snakeHead.tilemapLocation().row < snakeFood.tilemapLocation().row) {
+        return 2048 + (getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1)))))
+    } else if (snakeHead.tilemapLocation().column >= snakeFood.tilemapLocation().column && snakeHead.tilemapLocation().row < snakeFood.tilemapLocation().row) {
+        return 3072 + (getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1)))))
+    }
+    return 0
 }
 function doAction (Idx: number) {
     if (Idx == 3) {
