@@ -116,7 +116,7 @@ function resetSnake () {
 function checkCollision () {
     if (tiles.tileAtLocationEquals(snakeHead.tilemapLocation(), assets.tile`Wall`) || tiles.tileAtLocationEquals(snakeHead.tilemapLocation(), assets.tile`myTile`)) {
         info.changeScoreBy(1)
-        pause(100)
+        pause(200)
         resetSnake()
     }
 }
@@ -134,6 +134,9 @@ function getStateIdx () {
         return 3072 + (getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1)))))
     }
     return 0
+}
+function getMaxReward (stateIdx2: number) {
+    return Math.max(Math.max(lQ[stateIdx2][0], lQ[0][stateIdx2]), Math.max(lQ[0][2], lQ[stateIdx2][3]))
 }
 function doAction (Idx: number) {
     if (Idx == 3) {
@@ -165,9 +168,9 @@ function doQAction (StateIdx: number) {
     }
     return doAction(iMaxIdx)
 }
-function doQUpdate (stateIdx2: number, actionIdx2: number, alpha: number) {
-    lQ[stateIdx2][actionIdx2] = (1 - alpha) * lQ[stateIdx2][actionIdx2] + alpha * getReward(getStateIdx(), actionIdx2)
-    console.log(lQ[stateIdx2])
+function doQUpdate (stateIdx22: number, actionIdx2: number, alpha: number, gamma: number) {
+    lQ[stateIdx22][actionIdx2] = (1 - alpha) * lQ[stateIdx22][actionIdx2] + (alpha * getReward(getStateIdx(), actionIdx2) + alpha * gamma * getMaxReward(actionIdx2))
+    console.log(lQ[stateIdx22])
 }
 let currActionIdx = 0
 let currStateIdx = 0
@@ -180,6 +183,7 @@ let lQ: number[][] = []
 let snakeHead: Sprite = null
 let snakeFood: Sprite = null
 info.setScore(0)
+let speed = 350
 initQTable()
 snakeFood = sprites.create(img`
     . . . . . . . . . . . . . . . . 
@@ -219,7 +223,7 @@ snakeHead = sprites.create(img`
     `, SpriteKind.Player)
 scene.cameraFollowSprite(snakeHead)
 resetSnake()
-game.onUpdateInterval(350, function () {
+game.onUpdateInterval(200, function () {
     currStateIdx = getStateIdx()
     if (randint(0, 100) < 20) {
         currActionIdx = doAction(randint(0, 3))
@@ -230,5 +234,5 @@ game.onUpdateInterval(350, function () {
     eatFood()
     moveSnake()
     snakeHead.sayText(getReward(getStateIdx(), currActionIdx))
-    doQUpdate(currStateIdx, currActionIdx, 0.2)
+    doQUpdate(currStateIdx, currActionIdx, 0.2, 0.5)
 })

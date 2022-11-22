@@ -144,7 +144,7 @@ def checkCollision():
             myTile
         """)):
         info.change_score_by(1)
-        pause(100)
+        pause(200)
         resetSnake()
 
 def on_down_pressed():
@@ -161,6 +161,9 @@ def getStateIdx():
     elif snakeHead.tilemap_location().column >= snakeFood.tilemap_location().column and snakeHead.tilemap_location().row < snakeFood.tilemap_location().row:
         return 3072 + (getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1)))))
     return 0
+def getMaxReward(stateIdx2: number):
+    return max(max(lQ[stateIdx2][0], lQ[0][stateIdx2]),
+        max(lQ[0][2], lQ[stateIdx2][3]))
 def doAction(Idx: number):
     global colInc, rowInc
     if Idx == 3:
@@ -188,9 +191,9 @@ def doQAction(StateIdx: number):
         if lQ[StateIdx][index3] > lQ[StateIdx][iMaxIdx]:
             iMaxIdx = index3
     return doAction(iMaxIdx)
-def doQUpdate(stateIdx2: number, actionIdx2: number, alpha: number):
-    lQ[stateIdx2][actionIdx2] = (1 - alpha) * lQ[stateIdx2][actionIdx2] + alpha * getReward(getStateIdx(), actionIdx2)
-    print(lQ[stateIdx2])
+def doQUpdate(stateIdx22: number, actionIdx2: number, alpha: number, gamma: number):
+    lQ[stateIdx22][actionIdx2] = (1 - alpha) * lQ[stateIdx22][actionIdx2] + (alpha * getReward(getStateIdx(), actionIdx2) + alpha * gamma * getMaxReward(actionIdx2))
+    print(lQ[stateIdx22])
 currActionIdx = 0
 currStateIdx = 0
 iMaxIdx = 0
@@ -202,6 +205,7 @@ lQ: List[List[number]] = []
 snakeHead: Sprite = None
 snakeFood: Sprite = None
 info.set_score(0)
+speed = 350
 initQTable()
 snakeFood = sprites.create(img("""
         . . . . . . . . . . . . . . . . 
@@ -255,5 +259,5 @@ def on_update_interval():
     eatFood()
     moveSnake()
     snakeHead.say_text(getReward(getStateIdx(), currActionIdx))
-    doQUpdate(currStateIdx, currActionIdx, 0.2)
-game.on_update_interval(350, on_update_interval)
+    doQUpdate(currStateIdx, currActionIdx, 0.2, 0.5)
+game.on_update_interval(200, on_update_interval)
