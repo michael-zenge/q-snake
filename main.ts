@@ -48,8 +48,8 @@ function get_reward (stateIdx: number, actionIdx: number) {
     }
 }
 function do_Q_update (stateIdx22: number, actionIdx2: number, alpha: number, gamma: number) {
-    lQ[stateIdx22][actionIdx2] = (1 - alpha) * lQ[stateIdx22][actionIdx2] + (alpha * get_reward(get_state_idx(), actionIdx2) + alpha * gamma * getMaxReward(actionIdx2))
-    console.log(lQ[stateIdx22])
+    Q_table[stateIdx22][actionIdx2] = (1 - alpha) * Q_table[stateIdx22][actionIdx2] + (alpha * get_reward(get_state_idx(), actionIdx2) + alpha * gamma * getMaxReward(actionIdx2))
+    console.log(Q_table[stateIdx22])
 }
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     if (speed_ms > 50) {
@@ -88,7 +88,7 @@ controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
 function apply_Q_action (StateIdx: number) {
     iMaxIdx = 0
     for (let index3 = 0; index3 <= 4; index3++) {
-        if (lQ[StateIdx][index3] > lQ[StateIdx][iMaxIdx]) {
+        if (Q_table[StateIdx][index3] > Q_table[StateIdx][iMaxIdx]) {
             iMaxIdx = index3
         }
     }
@@ -109,9 +109,9 @@ function getState (colOffset: number, rowOffset: number, base: number) {
     }
 }
 function initialize_Q_table () {
-    lQ = []
+    Q_table = []
     for (let index = 0; index < 4096; index++) {
-        lQ.push([
+        Q_table.push([
         0,
         0,
         0,
@@ -123,7 +123,7 @@ controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
     apply_action(2)
 })
 function getMaxReward (stateIdx2: number) {
-    return Math.max(Math.max(lQ[stateIdx2][0], lQ[0][stateIdx2]), Math.max(lQ[0][2], lQ[stateIdx2][3]))
+    return Math.max(Math.max(Q_table[stateIdx2][0], Q_table[0][stateIdx2]), Math.max(Q_table[0][2], Q_table[stateIdx2][3]))
 }
 function get_state_idx () {
     if (snake_head.tilemapLocation().column >= snake_food.tilemapLocation().column && snake_head.tilemapLocation().row >= snake_food.tilemapLocation().row) {
@@ -136,6 +136,17 @@ function get_state_idx () {
         return 3072 + (getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1)))))
     }
     return 0
+}
+function set_global_variables () {
+    action_list = [
+    "right",
+    "left",
+    "down",
+    "up"
+    ]
+    speed_ms = 350
+    learning_rate = 0.2
+    discount_factor = 0.5
 }
 function apply_action (Idx: number) {
     if (Idx == 3) {
@@ -181,17 +192,20 @@ function check_collision () {
 }
 let current_action = 0
 let current_state = 0
+let discount_factor = 0
+let learning_rate = 0
+let action_list: string[] = []
 let iMaxIdx = 0
 let rowInc = 0
 let colInc = 0
 let listSnake: tiles.Location[] = []
 let index2 = 0
-let lQ: number[][] = []
+let Q_table: number[][] = []
+let speed_ms = 0
 let snake_head: Sprite = null
 let snake_food: Sprite = null
-let speed_ms = 0
 info.setScore(0)
-speed_ms = 350
+set_global_variables()
 initialize_Q_table()
 snake_food = sprites.create(img`
     . . . . . . . . . . . . . . . . 
@@ -243,5 +257,5 @@ game.onUpdate(function () {
     eat_food()
     move_snake()
     snake_head.sayText(get_reward(get_state_idx(), current_action))
-    do_Q_update(current_state, current_action, 0.2, 0.5)
+    do_Q_update(current_state, current_action, learning_rate, discount_factor)
 })
