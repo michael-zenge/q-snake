@@ -2,6 +2,12 @@ def on_up_pressed():
     doAction(3)
 controller.up.on_event(ControllerButtonEvent.PRESSED, on_up_pressed)
 
+def on_b_pressed():
+    global speed
+    if speed < 1000:
+        speed = speed + 50
+controller.B.on_event(ControllerButtonEvent.PRESSED, on_b_pressed)
+
 def initQTable():
     global lQ
     lQ = []
@@ -9,7 +15,9 @@ def initQTable():
         lQ.append([0, 0, 0, 0])
 
 def on_a_pressed():
-    game.over(True)
+    global speed
+    if speed > 50:
+        speed = speed - 50
 controller.A.on_event(ControllerButtonEvent.PRESSED, on_a_pressed)
 
 def getReward(stateIdx: number, actionIdx: number):
@@ -207,6 +215,7 @@ listSnake: List[tiles.Location] = []
 lQ: List[List[number]] = []
 snakeHead: Sprite = None
 snakeFood: Sprite = None
+speed = 0
 info.set_score(0)
 speed = 350
 initQTable()
@@ -251,8 +260,9 @@ snakeHead = sprites.create(img("""
 scene.camera_follow_sprite(snakeHead)
 resetSnake()
 
-def on_update_interval():
+def on_on_update():
     global currStateIdx, currActionIdx
+    pause(speed)
     currStateIdx = getStateIdx()
     if randint(0, 100) < 20:
         currActionIdx = doAction(randint(0, 3))
@@ -263,4 +273,4 @@ def on_update_interval():
     moveSnake()
     snakeHead.say_text(getReward(getStateIdx(), currActionIdx))
     doQUpdate(currStateIdx, currActionIdx, 0.2, 0.5)
-game.on_update_interval(200, on_update_interval)
+game.on_update(on_on_update)
