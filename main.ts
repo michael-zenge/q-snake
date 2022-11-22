@@ -61,14 +61,14 @@ controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
 })
 function eatFood () {
     if (tiles.tileAtLocationEquals(snakeHead.tilemapLocation(), assets.tile`myTile1`)) {
-        tiles.setTileAt(snakeHead.tilemapLocation(), assets.tile`myTile0`)
         while (true) {
             tiles.placeOnTile(snakeFood, tiles.getTileLocation(randint(2, 11), randint(2, 9)))
-            if (!(tiles.tileAtLocationEquals(snakeFood.tilemapLocation(), assets.tile`myTile`))) {
+            if (!(tiles.tileAtLocationEquals(snakeFood.tilemapLocation(), assets.tile`myTile1`)) && !(tiles.tileAtLocationEquals(snakeFood.tilemapLocation(), assets.tile`myTile`))) {
                 tiles.setTileAt(snakeFood.tilemapLocation(), assets.tile`myTile1`)
                 break;
             }
         }
+        tiles.setTileAt(snakeHead.tilemapLocation(), assets.tile`myTile0`)
         listSnake.unshift(snakeHead.tilemapLocation())
         info.changeScoreBy(1)
     }

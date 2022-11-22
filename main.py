@@ -58,14 +58,13 @@ def eatFood():
         assets.tile("""
             myTile1
         """)):
-        tiles.set_tile_at(snakeHead.tilemap_location(),
-            assets.tile("""
-                myTile0
-            """))
         while True:
             tiles.place_on_tile(snakeFood,
                 tiles.get_tile_location(randint(2, 11), randint(2, 9)))
             if not (tiles.tile_at_location_equals(snakeFood.tilemap_location(),
+                assets.tile("""
+                    myTile1
+                """))) and not (tiles.tile_at_location_equals(snakeFood.tilemap_location(),
                 assets.tile("""
                     myTile
                 """))):
@@ -74,6 +73,10 @@ def eatFood():
                         myTile1
                     """))
                 break
+        tiles.set_tile_at(snakeHead.tilemap_location(),
+            assets.tile("""
+                myTile0
+            """))
         listSnake.unshift(snakeHead.tilemap_location())
         info.change_score_by(1)
 
