@@ -48,8 +48,8 @@ function get_reward (stateIdx: number, actionIdx: number) {
     }
 }
 function do_Q_update (stateIdx22: number, actionIdx2: number, alpha: number, gamma: number) {
-    Q_table[stateIdx22][actionIdx2] = (1 - alpha) * Q_table[stateIdx22][actionIdx2] + (alpha * get_reward(get_state_idx(), actionIdx2) + alpha * gamma * getMaxReward(actionIdx2))
-    console.log(Q_table[stateIdx22])
+    quality_table[stateIdx22][actionIdx2] = (1 - alpha) * quality_table[stateIdx22][actionIdx2] + (alpha * get_reward(get_state_idx(), actionIdx2) + alpha * gamma * getMaxReward(actionIdx2))
+    console.log(quality_table[stateIdx22])
 }
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     if (speed_ms > 50) {
@@ -88,7 +88,7 @@ controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
 function apply_Q_action (StateIdx: number) {
     iMaxIdx = 0
     for (let index3 = 0; index3 <= 4; index3++) {
-        if (Q_table[StateIdx][index3] > Q_table[StateIdx][iMaxIdx]) {
+        if (quality_table[StateIdx][index3] > quality_table[StateIdx][iMaxIdx]) {
             iMaxIdx = index3
         }
     }
@@ -97,6 +97,17 @@ function apply_Q_action (StateIdx: number) {
 controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
     apply_action(0)
 })
+function init_quality_table () {
+    quality_table = []
+    for (let index = 0; index < 4096; index++) {
+        quality_table.push([
+        0,
+        0,
+        0,
+        0
+        ])
+    }
+}
 function getState (colOffset: number, rowOffset: number, base: number) {
     if (tiles.tileAtLocationEquals(tiles.getTileLocation(snake_head.tilemapLocation().column + colOffset, snake_head.tilemapLocation().row + rowOffset), assets.tile`myTile1`)) {
         return base
@@ -108,22 +119,11 @@ function getState (colOffset: number, rowOffset: number, base: number) {
         return 0
     }
 }
-function initialize_Q_table () {
-    Q_table = []
-    for (let index = 0; index < 4096; index++) {
-        Q_table.push([
-        0,
-        0,
-        0,
-        0
-        ])
-    }
-}
 controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
     apply_action(2)
 })
 function getMaxReward (stateIdx2: number) {
-    return Math.max(Math.max(Q_table[stateIdx2][0], Q_table[0][stateIdx2]), Math.max(Q_table[0][2], Q_table[stateIdx2][3]))
+    return Math.max(Math.max(quality_table[stateIdx2][0], quality_table[0][stateIdx2]), Math.max(quality_table[0][2], quality_table[stateIdx2][3]))
 }
 function get_state_idx () {
     if (snake_head.tilemapLocation().column >= snake_food.tilemapLocation().column && snake_head.tilemapLocation().row >= snake_food.tilemapLocation().row) {
@@ -138,15 +138,46 @@ function get_state_idx () {
     return 0
 }
 function set_global_variables () {
-    action_list = [
-    "right",
-    "left",
-    "down",
-    "up"
-    ]
     speed_ms = 350
     learning_rate = 0.2
     discount_factor = 0.5
+    snake_food = sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . f . f . . . . . . . 
+        . . . . . . . f . . . . . . . . 
+        . . . . . . f . f . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `, SpriteKind.Food)
+    snake_head = sprites.create(img`
+        . . 7 7 7 7 7 7 7 7 7 7 7 7 . . 
+        . 7 7 7 7 7 7 7 7 7 7 7 7 7 7 . 
+        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+        . 7 7 7 7 7 7 7 7 7 7 7 7 7 7 . 
+        . . 7 7 7 7 7 7 7 7 7 7 7 7 . . 
+        `, SpriteKind.Player)
+    scene.cameraFollowSprite(snake_head)
 }
 function apply_action (Idx: number) {
     if (Idx == 3) {
@@ -194,56 +225,18 @@ let current_action = 0
 let current_state = 0
 let discount_factor = 0
 let learning_rate = 0
-let action_list: string[] = []
 let iMaxIdx = 0
+let snake_food: Sprite = null
+let snake_head: Sprite = null
 let rowInc = 0
 let colInc = 0
 let listSnake: tiles.Location[] = []
 let index2 = 0
-let Q_table: number[][] = []
+let quality_table: number[][] = []
 let speed_ms = 0
-let snake_head: Sprite = null
-let snake_food: Sprite = null
 info.setScore(0)
 set_global_variables()
-initialize_Q_table()
-snake_food = sprites.create(img`
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . f . f . . . . . . . 
-    . . . . . . . f . . . . . . . . 
-    . . . . . . f . f . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    `, SpriteKind.Food)
-snake_head = sprites.create(img`
-    . . 7 7 7 7 7 7 7 7 7 7 7 7 . . 
-    . 7 7 7 7 7 7 7 7 7 7 7 7 7 7 . 
-    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-    . 7 7 7 7 7 7 7 7 7 7 7 7 7 7 . 
-    . . 7 7 7 7 7 7 7 7 7 7 7 7 . . 
-    `, SpriteKind.Player)
-scene.cameraFollowSprite(snake_head)
+init_quality_table()
 reset_snake()
 game.onUpdate(function () {
     pause(speed_ms)

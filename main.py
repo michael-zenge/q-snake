@@ -45,8 +45,8 @@ def get_reward(stateIdx: number, actionIdx: number):
     else:
         return -1
 def do_Q_update(stateIdx22: number, actionIdx2: number, alpha: number, gamma: number):
-    lQ[stateIdx22][actionIdx2] = (1 - alpha) * lQ[stateIdx22][actionIdx2] + (alpha * get_reward(get_state_idx(), actionIdx2) + alpha * gamma * getMaxReward(actionIdx2))
-    print(lQ[stateIdx22])
+    Q_table[stateIdx22][actionIdx2] = (1 - alpha) * Q_table[stateIdx22][actionIdx2] + (alpha * get_reward(get_state_idx(), actionIdx2) + alpha * gamma * getMaxReward(actionIdx2))
+    print(Q_table[stateIdx22])
 
 def on_a_pressed():
     global speed_ms
@@ -97,7 +97,7 @@ def apply_Q_action(StateIdx: number):
     global iMaxIdx
     iMaxIdx = 0
     for index3 in range(5):
-        if lQ[StateIdx][index3] > lQ[StateIdx][iMaxIdx]:
+        if Q_table[StateIdx][index3] > Q_table[StateIdx][iMaxIdx]:
             iMaxIdx = index3
     return apply_action(iMaxIdx)
 
@@ -127,18 +127,18 @@ def getState(colOffset: number, rowOffset: number, base: number):
     else:
         return 0
 def initialize_Q_table():
-    global lQ
-    lQ = []
+    global Q_table
+    Q_table = []
     for index in range(4096):
-        lQ.append([0, 0, 0, 0])
+        Q_table.append([0, 0, 0, 0])
 
 def on_down_pressed():
     apply_action(2)
 controller.down.on_event(ControllerButtonEvent.PRESSED, on_down_pressed)
 
 def getMaxReward(stateIdx2: number):
-    return max(max(lQ[stateIdx2][0], lQ[0][stateIdx2]),
-        max(lQ[0][2], lQ[stateIdx2][3]))
+    return max(max(Q_table[stateIdx2][0], Q_table[0][stateIdx2]),
+        max(Q_table[0][2], Q_table[stateIdx2][3]))
 def get_state_idx():
     if snake_head.tilemap_location().column >= snake_food.tilemap_location().column and snake_head.tilemap_location().row >= snake_food.tilemap_location().row:
         return 0 + (getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1)))))
@@ -149,6 +149,50 @@ def get_state_idx():
     elif snake_head.tilemap_location().column >= snake_food.tilemap_location().column and snake_head.tilemap_location().row < snake_food.tilemap_location().row:
         return 3072 + (getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1)))))
     return 0
+def set_global_variables():
+    global speed_ms, learning_rate, discount_factor, snake_food, snake_head
+    speed_ms = 350
+    learning_rate = 0.2
+    discount_factor = 0.5
+    snake_food = sprites.create(img("""
+            . . . . . . . . . . . . . . . . 
+                    . . . . . . . . . . . . . . . . 
+                    . . . . . . . . . . . . . . . . 
+                    . . . . . . . . . . . . . . . . 
+                    . . . . . . . . . . . . . . . . 
+                    . . . . . . f . f . . . . . . . 
+                    . . . . . . . f . . . . . . . . 
+                    . . . . . . f . f . . . . . . . 
+                    . . . . . . . . . . . . . . . . 
+                    . . . . . . . . . . . . . . . . 
+                    . . . . . . . . . . . . . . . . 
+                    . . . . . . . . . . . . . . . . 
+                    . . . . . . . . . . . . . . . . 
+                    . . . . . . . . . . . . . . . . 
+                    . . . . . . . . . . . . . . . . 
+                    . . . . . . . . . . . . . . . .
+        """),
+        SpriteKind.food)
+    snake_head = sprites.create(img("""
+            . . 7 7 7 7 7 7 7 7 7 7 7 7 . . 
+                    . 7 7 7 7 7 7 7 7 7 7 7 7 7 7 . 
+                    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+                    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+                    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+                    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+                    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+                    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+                    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+                    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+                    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+                    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+                    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+                    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+                    . 7 7 7 7 7 7 7 7 7 7 7 7 7 7 . 
+                    . . 7 7 7 7 7 7 7 7 7 7 7 7 . .
+        """),
+        SpriteKind.player)
+    scene.camera_follow_sprite(snake_head)
 def apply_action(Idx: number):
     global colInc, rowInc
     if Idx == 3:
@@ -207,59 +251,20 @@ def check_collision():
         reset_snake()
 current_action = 0
 current_state = 0
+discount_factor = 0
+learning_rate = 0
 iMaxIdx = 0
+snake_food: Sprite = None
+snake_head: Sprite = None
 rowInc = 0
 colInc = 0
 listSnake: List[tiles.Location] = []
 index2 = 0
-lQ: List[List[number]] = []
-snake_head: Sprite = None
-snake_food: Sprite = None
+Q_table: List[List[number]] = []
 speed_ms = 0
 info.set_score(0)
-speed_ms = 350
-learning_rate = 0.2
-discount_factor = 0.5
+set_global_variables()
 initialize_Q_table()
-snake_food = sprites.create(img("""
-        . . . . . . . . . . . . . . . . 
-            . . . . . . . . . . . . . . . . 
-            . . . . . . . . . . . . . . . . 
-            . . . . . . . . . . . . . . . . 
-            . . . . . . . . . . . . . . . . 
-            . . . . . . f . f . . . . . . . 
-            . . . . . . . f . . . . . . . . 
-            . . . . . . f . f . . . . . . . 
-            . . . . . . . . . . . . . . . . 
-            . . . . . . . . . . . . . . . . 
-            . . . . . . . . . . . . . . . . 
-            . . . . . . . . . . . . . . . . 
-            . . . . . . . . . . . . . . . . 
-            . . . . . . . . . . . . . . . . 
-            . . . . . . . . . . . . . . . . 
-            . . . . . . . . . . . . . . . .
-    """),
-    SpriteKind.food)
-snake_head = sprites.create(img("""
-        . . 7 7 7 7 7 7 7 7 7 7 7 7 . . 
-            . 7 7 7 7 7 7 7 7 7 7 7 7 7 7 . 
-            7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-            7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-            7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-            7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-            7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-            7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-            7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-            7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-            7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-            7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-            7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-            7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-            . 7 7 7 7 7 7 7 7 7 7 7 7 7 7 . 
-            . . 7 7 7 7 7 7 7 7 7 7 7 7 . .
-    """),
-    SpriteKind.player)
-scene.camera_follow_sprite(snake_head)
 reset_snake()
 
 def on_on_update():
