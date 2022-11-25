@@ -8,43 +8,13 @@ controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
 })
 function get_reward (stateIdx: number, actionIdx: number) {
     if (stateIdx >= 3072) {
-        if (stateIdx - 3072 >= 512) {
-            return -10
-        } else if (stateIdx - 3072 >= 256) {
-            return 10
-        } else if (actionIdx == 2 || actionIdx == 1) {
-            return 1
-        } else {
-            return -1
-        }
+        return get_reward_with_location_offset(stateIdx, actionIdx, 3072, 2, 1)
     } else if (stateIdx >= 2048) {
-        if (stateIdx - 2048 >= 512) {
-            return -10
-        } else if (stateIdx - 2048 >= 256) {
-            return 10
-        } else if (actionIdx == 2 || actionIdx == 0) {
-            return 1
-        } else {
-            return -1
-        }
+        return get_reward_with_location_offset(stateIdx, actionIdx, 2048, 2, 0)
     } else if (stateIdx >= 1024) {
-        if (stateIdx - 1024 >= 512) {
-            return -10
-        } else if (stateIdx - 1024 >= 256) {
-            return 10
-        } else if (actionIdx == 3 || actionIdx == 0) {
-            return 1
-        } else {
-            return -1
-        }
-    } else if (stateIdx - 0 >= 512) {
-        return -10
-    } else if (stateIdx - 0 >= 256) {
-        return 10
-    } else if (actionIdx == 3 || actionIdx == 1) {
-        return 1
+        return get_reward_with_location_offset(stateIdx, actionIdx, 1024, 3, 0)
     } else {
-        return -1
+        return get_reward_with_location_offset(stateIdx, actionIdx, 0, 3, 1)
     }
 }
 function do_Q_update (stateIdx22: number, actionIdx2: number, alpha: number, gamma: number) {
@@ -75,7 +45,6 @@ function move_snake () {
 function reset_snake () {
     tiles.setCurrentTilemap(tilemap`level1`)
     tiles.placeOnTile(snake_food, tiles.getTileLocation(randint(2, 11), randint(2, 9)))
-    tiles.setTileAt(snake_food.tilemapLocation(), assets.tile`myTile1`)
     listSnake = []
     listSnake.unshift(tiles.getTileLocation(4, 4))
     tiles.placeOnTile(snake_head, listSnake[0])
@@ -109,7 +78,7 @@ function init_quality_table () {
     }
 }
 function getState (colOffset: number, rowOffset: number, base: number) {
-    if (tiles.tileAtLocationEquals(tiles.getTileLocation(snake_head.tilemapLocation().column + colOffset, snake_head.tilemapLocation().row + rowOffset), assets.tile`myTile1`)) {
+    if (snake_head.tilemapLocation().column + colOffset == snake_food.tilemapLocation().column && snake_head.tilemapLocation().row + rowOffset == snake_food.tilemapLocation().row) {
         return base
     } else if (tiles.tileAtLocationEquals(tiles.getTileLocation(snake_head.tilemapLocation().column + colOffset, snake_head.tilemapLocation().row + rowOffset), assets.tile`myTile`)) {
         return base * 2
@@ -139,25 +108,25 @@ function get_state_idx () {
 }
 function set_global_variables () {
     speed_ms = 350
-    learning_rate = 0.2
+    learning_rate = 1
     discount_factor = 0.5
     snake_food = sprites.create(img`
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . f . f . . . . . . . 
-        . . . . . . . f . . . . . . . . 
-        . . . . . . f . f . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
+        . . 2 2 2 2 2 2 2 2 2 2 2 2 . . 
+        . 2 2 2 2 2 2 2 2 2 2 2 2 2 2 . 
+        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+        . 2 2 2 2 2 2 2 2 2 2 2 2 2 2 . 
+        . . 2 2 2 2 2 2 2 2 2 2 2 2 . . 
         `, SpriteKind.Food)
     snake_head = sprites.create(img`
         . . 7 7 7 7 7 7 7 7 7 7 7 7 . . 
@@ -178,6 +147,17 @@ function set_global_variables () {
         . . 7 7 7 7 7 7 7 7 7 7 7 7 . . 
         `, SpriteKind.Player)
     scene.cameraFollowSprite(snake_head)
+}
+function get_reward_with_location_offset (state_index: number, action_index: number, index_offset: number, ref_action_1: number, ref_action_2: number) {
+    if (state_index - index_offset >= 512) {
+        return -10
+    } else if (state_index - index_offset >= 256) {
+        return 10
+    } else if (action_index == ref_action_1 || action_index == ref_action_2) {
+        return 1
+    } else {
+        return -1
+    }
 }
 function apply_action (Idx: number) {
     if (Idx == 3) {
@@ -201,15 +181,13 @@ function apply_action (Idx: number) {
     }
 }
 function eat_food () {
-    if (tiles.tileAtLocationEquals(snake_head.tilemapLocation(), assets.tile`myTile1`)) {
+    if (snake_head.overlapsWith(snake_food)) {
         while (true) {
             tiles.placeOnTile(snake_food, tiles.getTileLocation(randint(2, 11), randint(2, 9)))
-            if (!(tiles.tileAtLocationEquals(snake_food.tilemapLocation(), assets.tile`myTile1`)) && !(tiles.tileAtLocationEquals(snake_food.tilemapLocation(), assets.tile`myTile`))) {
-                tiles.setTileAt(snake_food.tilemapLocation(), assets.tile`myTile1`)
+            if (!(snake_head.overlapsWith(snake_food)) && !(tiles.tileAtLocationEquals(snake_food.tilemapLocation(), assets.tile`myTile`))) {
                 break;
             }
         }
-        tiles.setTileAt(snake_head.tilemapLocation(), assets.tile`myTile0`)
         listSnake.unshift(snake_head.tilemapLocation())
         info.changeScoreBy(1)
     }
