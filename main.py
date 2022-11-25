@@ -219,7 +219,7 @@ discount_factor = 0
 learning_rate = 0
 quality_table: List[List[number]] = []
 speed_ms = 0
-info.set_score(0)
+info.set_score(-500)
 setGlobalVariables()
 initQualityTable()
 resetSnake()
@@ -230,7 +230,7 @@ def on_on_update():
     checkCollision()
     eatFood()
     current_state = getStateIndex()
-    if randint(0, 100) < 20:
+    if info.score() < 0 and randint(0, 100) < 20:
         current_action = doAction(randint(0, 3))
     else:
         current_action = callAgentForAction(current_state)

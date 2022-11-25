@@ -90,9 +90,9 @@ function eatFood () {
 controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
     doAction(0)
 })
-function update_quality_table (state_index: number, action_index: number, alpha: number, gamma: number) {
-    quality_table[state_index][action_index] = (1 - alpha) * quality_table[state_index][action_index] + (alpha * getReward(getStateIndex(), action_index) + alpha * gamma * getMaxReward(action_index))
-    console.log(quality_table[state_index])
+function update_quality_table (state_index2: number, action_index2: number, alpha: number, gamma: number) {
+    quality_table[state_index2][action_index2] = (1 - alpha) * quality_table[state_index2][action_index2] + (alpha * getReward(getStateIndex(), action_index2) + alpha * gamma * getMaxReward(action_index2))
+    console.log(quality_table[state_index2])
 }
 function getStateIndex () {
     if (snake_head.tilemapLocation().column >= snake_food.tilemapLocation().column && snake_head.tilemapLocation().row >= snake_food.tilemapLocation().row) {
@@ -131,12 +131,12 @@ function resetSnake () {
     snake_list.unshift(snake_head.tilemapLocation())
     doAction(2)
 }
-function getRewardWithLocationOffset (state_index: number, action_index: number, index_offset: number, ref_action_1: number, ref_action_2: number) {
-    if (state_index - index_offset >= 512) {
+function getRewardWithLocationOffset (state_index3: number, action_index3: number, index_offset: number, ref_action_1: number, ref_action_2: number) {
+    if (state_index3 - index_offset >= 512) {
         return -10
-    } else if (state_index - index_offset >= 256) {
+    } else if (state_index3 - index_offset >= 256) {
         return 10
-    } else if (action_index == ref_action_1 || action_index == ref_action_2) {
+    } else if (action_index3 == ref_action_1 || action_index3 == ref_action_2) {
         return 1
     } else {
         return -1
@@ -187,10 +187,10 @@ function doAction (Idx: number) {
         return -1
     }
 }
-function callAgentForAction (state_index: number) {
+function callAgentForAction (state_index4: number) {
     iMaxIdx = 0
     for (let index3 = 0; index3 <= 4; index3++) {
-        if (quality_table[state_index][index3] > quality_table[state_index][iMaxIdx]) {
+        if (quality_table[state_index4][index3] > quality_table[state_index4][iMaxIdx]) {
             iMaxIdx = index3
         }
     }
@@ -209,7 +209,7 @@ let discount_factor = 0
 let learning_rate = 0
 let quality_table: number[][] = []
 let speed_ms = 0
-info.setScore(0)
+info.setScore(-500)
 setGlobalVariables()
 initQualityTable()
 resetSnake()
@@ -218,7 +218,7 @@ game.onUpdate(function () {
     checkCollision()
     eatFood()
     current_state = getStateIndex()
-    if (randint(0, 100) < 20) {
+    if (info.score() < 0 && randint(0, 100) < 20) {
         current_action = doAction(randint(0, 3))
     } else {
         current_action = callAgentForAction(current_state)
