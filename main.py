@@ -26,16 +26,6 @@ def on_b_pressed():
         speed_ms = speed_ms + 50
 controller.B.on_event(ControllerButtonEvent.PRESSED, on_b_pressed)
 
-def get_reward(state_index: number, action_index: number):
-    if state_index >= 3072:
-        return get_reward_with_location_offset(state_index, action_index, 3072, 2, 1)
-    elif state_index >= 2048:
-        return get_reward_with_location_offset(state_index, action_index, 2048, 2, 0)
-    elif state_index >= 1024:
-        return get_reward_with_location_offset(state_index, action_index, 1024, 3, 0)
-    else:
-        return get_reward_with_location_offset(state_index, action_index, 0, 3, 1)
-
 def on_a_pressed():
     global speed_ms
     if speed_ms > 50:
@@ -47,24 +37,15 @@ def initQualityTable():
     quality_table = []
     for index in range(4096):
         quality_table.append([0, 0, 0, 0])
-def move_snake():
-    global index2
-    index2 = 0
-    while index2 <= len(snake_list) - 1:
-        if index2 == 0:
-            tiles.set_tile_at(snake_list[index2], assets.tile("""
-                myTile0
-            """))
-        if index2 == len(snake_list) - 1:
-            snake_list[index2] = tiles.get_tile_location(snake_list[index2].column + colInc,
-                snake_list[index2].row + rowInc)
-            tiles.place_on_tile(snake_head, snake_list[index2])
-        else:
-            snake_list[index2] = tiles.get_tile_location(snake_list[index2 + 1].column, snake_list[index2 + 1].row)
-            tiles.set_tile_at(snake_list[index2], assets.tile("""
-                myTile
-            """))
-        index2 += 1
+def getReward(state_index: number, action_index: number):
+    if state_index >= 3072:
+        return getRewardWithLocationOffset(state_index, action_index, 3072, 2, 1)
+    elif state_index >= 2048:
+        return getRewardWithLocationOffset(state_index, action_index, 2048, 2, 0)
+    elif state_index >= 1024:
+        return getRewardWithLocationOffset(state_index, action_index, 1024, 3, 0)
+    else:
+        return getRewardWithLocationOffset(state_index, action_index, 0, 3, 1)
 
 def on_left_pressed():
     doAction(1)
@@ -114,20 +95,23 @@ def setGlobalVariables():
         """),
         SpriteKind.player)
     scene.camera_follow_sprite(snake_head)
-def apply_Q_action(StateIdx: number):
-    global iMaxIdx
-    iMaxIdx = 0
-    for index3 in range(5):
-        if quality_table[StateIdx][index3] > quality_table[StateIdx][iMaxIdx]:
-            iMaxIdx = index3
-    return doAction(iMaxIdx)
+def eatFood():
+    if snake_head.overlaps_with(snake_food):
+        while snake_head.overlaps_with(snake_food) or tiles.tile_at_location_equals(snake_food.tilemap_location(),
+            assets.tile("""
+                myTile
+            """)):
+            tiles.place_on_tile(snake_food,
+                tiles.get_tile_location(randint(2, 11), randint(2, 9)))
+        snake_list.unshift(snake_head.tilemap_location())
+        info.change_score_by(1)
 
 def on_right_pressed():
     doAction(0)
 controller.right.on_event(ControllerButtonEvent.PRESSED, on_right_pressed)
 
 def update_quality_table(state_index2: number, action_index2: number, alpha: number, gamma: number):
-    quality_table[state_index2][action_index2] = (1 - alpha) * quality_table[state_index2][action_index2] + (alpha * get_reward(getStateIndex(), action_index2) + alpha * gamma * getMaxReward(action_index2))
+    quality_table[state_index2][action_index2] = (1 - alpha) * quality_table[state_index2][action_index2] + (alpha * getReward(getStateIndex(), action_index2) + alpha * gamma * getMaxReward(action_index2))
     print(quality_table[state_index2])
 def getStateIndex():
     if snake_head.tilemap_location().column >= snake_food.tilemap_location().column and snake_head.tilemap_location().row >= snake_food.tilemap_location().row:
@@ -139,6 +123,24 @@ def getStateIndex():
     elif snake_head.tilemap_location().column >= snake_food.tilemap_location().column and snake_head.tilemap_location().row < snake_food.tilemap_location().row:
         return 3072 + (getStateIdx(0, 0, 256) + (getStateIdx(-1, 0, 64) + (getStateIdx(0, 1, 16) + (getStateIdx(1, 0, 4) + getStateIdx(0, -1, 1)))))
     return 0
+def moveSnake():
+    global index2
+    index2 = 0
+    while index2 <= len(snake_list) - 1:
+        if index2 == 0:
+            tiles.set_tile_at(snake_list[index2], assets.tile("""
+                myTile0
+            """))
+        if index2 == len(snake_list) - 1:
+            snake_list[index2] = tiles.get_tile_location(snake_list[index2].column + colInc,
+                snake_list[index2].row + rowInc)
+            tiles.place_on_tile(snake_head, snake_list[index2])
+        else:
+            snake_list[index2] = tiles.get_tile_location(snake_list[index2 + 1].column, snake_list[index2 + 1].row)
+            tiles.set_tile_at(snake_list[index2], assets.tile("""
+                myTile
+            """))
+        index2 += 1
 def resetSnake():
     global snake_list
     tiles.set_current_tilemap(tilemap("""
@@ -151,6 +153,25 @@ def resetSnake():
     tiles.place_on_tile(snake_head, snake_list[0])
     snake_list.unshift(snake_head.tilemap_location())
     doAction(2)
+def getRewardWithLocationOffset(state_index3: number, action_index3: number, index_offset: number, ref_action_1: number, ref_action_2: number):
+    if state_index3 - index_offset >= 512:
+        return -10
+    elif state_index3 - index_offset >= 256:
+        return 10
+    elif action_index3 == ref_action_1 or action_index3 == ref_action_2:
+        return 1
+    else:
+        return -1
+def checkCollision():
+    if tiles.tile_at_location_equals(snake_head.tilemap_location(), assets.tile("""
+        Wall
+    """)) or tiles.tile_at_location_equals(snake_head.tilemap_location(),
+        assets.tile("""
+            myTile
+        """)):
+        info.change_score_by(1)
+        pause(200)
+        resetSnake()
 
 def on_down_pressed():
     doAction(2)
@@ -176,15 +197,6 @@ def getStateIdx(column_offset2: number, row_offset2: number, base2: number):
 def getMaxReward(stateIdx2: number):
     return max(max(quality_table[stateIdx2][0], quality_table[0][stateIdx2]),
         max(quality_table[0][2], quality_table[stateIdx2][3]))
-def get_reward_with_location_offset(state_index3: number, action_index3: number, index_offset: number, ref_action_1: number, ref_action_2: number):
-    if state_index3 - index_offset >= 512:
-        return -10
-    elif state_index3 - index_offset >= 256:
-        return 10
-    elif action_index3 == ref_action_1 or action_index3 == ref_action_2:
-        return 1
-    else:
-        return -1
 def doAction(Idx: number):
     global colInc, rowInc
     if Idx == 3:
@@ -205,37 +217,22 @@ def doAction(Idx: number):
         return Idx
     else:
         return -1
-def eat_food():
-    if snake_head.overlaps_with(snake_food):
-        while True:
-            tiles.place_on_tile(snake_food,
-                tiles.get_tile_location(randint(2, 11), randint(2, 9)))
-            if not (snake_head.overlaps_with(snake_food)) and not (tiles.tile_at_location_equals(snake_food.tilemap_location(),
-                assets.tile("""
-                    myTile
-                """))):
-                break
-        snake_list.unshift(snake_head.tilemap_location())
-        info.change_score_by(1)
-def check_collision():
-    if tiles.tile_at_location_equals(snake_head.tilemap_location(), assets.tile("""
-        Wall
-    """)) or tiles.tile_at_location_equals(snake_head.tilemap_location(),
-        assets.tile("""
-            myTile
-        """)):
-        info.change_score_by(1)
-        pause(200)
-        resetSnake()
+def callAgentForAction(state_index4: number):
+    global iMaxIdx
+    iMaxIdx = 0
+    for index3 in range(5):
+        if quality_table[state_index4][index3] > quality_table[state_index4][iMaxIdx]:
+            iMaxIdx = index3
+    return doAction(iMaxIdx)
 current_action = 0
 current_state = 0
 iMaxIdx = 0
-discount_factor = 0
-learning_rate = 0
 rowInc = 0
 colInc = 0
-snake_list: List[tiles.Location] = []
 index2 = 0
+snake_list: List[tiles.Location] = []
+discount_factor = 0
+learning_rate = 0
 quality_table: List[List[number]] = []
 speed_ms = 0
 snake_food: Sprite = None
@@ -252,11 +249,11 @@ def on_on_update():
     if randint(0, 100) < 20:
         current_action = doAction(randint(0, 3))
     else:
-        current_action = apply_Q_action(current_state)
-    check_collision()
-    eat_food()
-    move_snake()
-    snake_head.say_text(get_reward(getStateIndex(), current_action))
+        current_action = callAgentForAction(current_state)
+    checkCollision()
+    eatFood()
+    moveSnake()
+    snake_head.say_text(getReward(getStateIndex(), current_action))
     update_quality_table(current_state,
         current_action,
         learning_rate,

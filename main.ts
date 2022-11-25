@@ -91,11 +91,8 @@ function setGlobalVariables () {
 }
 function eatFood () {
     if (snake_head.overlapsWith(snake_food)) {
-        while (true) {
+        while (snake_head.overlapsWith(snake_food) || tiles.tileAtLocationEquals(snake_food.tilemapLocation(), assets.tile`myTile`)) {
             tiles.placeOnTile(snake_food, tiles.getTileLocation(randint(2, 11), randint(2, 9)))
-            if (!(snake_head.overlapsWith(snake_food)) && !(tiles.tileAtLocationEquals(snake_food.tilemapLocation(), assets.tile`myTile`))) {
-                break;
-            }
         }
         snake_list.unshift(snake_head.tilemapLocation())
         info.changeScoreBy(1)
