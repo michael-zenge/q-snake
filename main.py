@@ -36,7 +36,7 @@ controller.left.on_event(ControllerButtonEvent.PRESSED, on_left_pressed)
 def setGlobalVariables():
     global speed_ms, learning_rate, discount_factor, snake_food, snake_head
     speed_ms = 350
-    learning_rate = 1
+    learning_rate = 0.2
     discount_factor = 0.5
     snake_food = sprites.create(img("""
             . . 2 2 2 2 2 2 2 2 2 2 2 2 . . 
@@ -227,6 +227,8 @@ resetSnake()
 def on_on_update():
     global current_state, current_action
     pause(speed_ms)
+    checkCollision()
+    eatFood()
     current_state = getStateIndex()
     if randint(0, 100) < 20:
         current_action = doAction(randint(0, 3))
@@ -238,6 +240,4 @@ def on_on_update():
         current_action,
         learning_rate,
         discount_factor)
-    checkCollision()
-    eatFood()
 game.on_update(on_on_update)

@@ -38,7 +38,7 @@ controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
 })
 function setGlobalVariables () {
     speed_ms = 350
-    learning_rate = 1
+    learning_rate = 0.2
     discount_factor = 0.5
     snake_food = sprites.create(img`
         . . 2 2 2 2 2 2 2 2 2 2 2 2 . . 
