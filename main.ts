@@ -1,17 +1,6 @@
 controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
     doAction(3)
 })
-function getState2 (column_offset: number, row_offset: number, base: number) {
-    if (snake_head.tilemapLocation().column + column_offset == snake_food.tilemapLocation().column && snake_head.tilemapLocation().row + row_offset == snake_food.tilemapLocation().row) {
-        return base
-    } else if (tiles.tileAtLocationEquals(tiles.getTileLocation(snake_head.tilemapLocation().column + column_offset, snake_head.tilemapLocation().row + row_offset), assets.tile`myTile`)) {
-        return base * 2
-    } else if (tiles.tileAtLocationEquals(tiles.getTileLocation(snake_head.tilemapLocation().column + column_offset, snake_head.tilemapLocation().row + row_offset), assets.tile`Wall`)) {
-        return base * 2 + base
-    } else {
-        return 0
-    }
-}
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
     if (speed_ms < 1000) {
         speed_ms = speed_ms + 50
@@ -214,26 +203,26 @@ let rowInc = 0
 let colInc = 0
 let index2 = 0
 let snake_list: tiles.Location[] = []
+let snake_head: Sprite = null
+let snake_food: Sprite = null
 let discount_factor = 0
 let learning_rate = 0
 let quality_table: number[][] = []
 let speed_ms = 0
-let snake_food: Sprite = null
-let snake_head: Sprite = null
 info.setScore(0)
 setGlobalVariables()
 initQualityTable()
 resetSnake()
 game.onUpdate(function () {
     pause(speed_ms)
+    checkCollision()
+    eatFood()
     current_state = getStateIndex()
     if (randint(0, 100) < 20) {
         current_action = doAction(randint(0, 3))
     } else {
         current_action = callAgentForAction(current_state)
     }
-    checkCollision()
-    eatFood()
     moveSnake()
     snake_head.sayText(getReward(getStateIndex(), current_action))
     update_quality_table(current_state, current_action, learning_rate, discount_factor)

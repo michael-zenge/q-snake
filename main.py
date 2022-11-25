@@ -2,24 +2,6 @@ def on_up_pressed():
     doAction(3)
 controller.up.on_event(ControllerButtonEvent.PRESSED, on_up_pressed)
 
-def getState2(column_offset: number, row_offset: number, base: number):
-    if snake_head.tilemap_location().column + column_offset == snake_food.tilemap_location().column and snake_head.tilemap_location().row + row_offset == snake_food.tilemap_location().row:
-        return base
-    elif tiles.tile_at_location_equals(tiles.get_tile_location(snake_head.tilemap_location().column + column_offset,
-            snake_head.tilemap_location().row + row_offset),
-        assets.tile("""
-            myTile
-        """)):
-        return base * 2
-    elif tiles.tile_at_location_equals(tiles.get_tile_location(snake_head.tilemap_location().column + column_offset,
-            snake_head.tilemap_location().row + row_offset),
-        assets.tile("""
-            Wall
-        """)):
-        return base * 2 + base
-    else:
-        return 0
-
 def on_b_pressed():
     global speed_ms
     if speed_ms < 1000:
@@ -177,21 +159,21 @@ def on_down_pressed():
     doAction(2)
 controller.down.on_event(ControllerButtonEvent.PRESSED, on_down_pressed)
 
-def getStateIdx(column_offset2: number, row_offset2: number, base2: number):
-    if snake_head.tilemap_location().column + column_offset2 == snake_food.tilemap_location().column and snake_head.tilemap_location().row + row_offset2 == snake_food.tilemap_location().row:
-        return base2
-    elif tiles.tile_at_location_equals(tiles.get_tile_location(snake_head.tilemap_location().column + column_offset2,
-            snake_head.tilemap_location().row + row_offset2),
+def getStateIdx(column_offset: number, row_offset: number, base: number):
+    if snake_head.tilemap_location().column + column_offset == snake_food.tilemap_location().column and snake_head.tilemap_location().row + row_offset == snake_food.tilemap_location().row:
+        return base
+    elif tiles.tile_at_location_equals(tiles.get_tile_location(snake_head.tilemap_location().column + column_offset,
+            snake_head.tilemap_location().row + row_offset),
         assets.tile("""
             myTile
         """)):
-        return base2 * 2
-    elif tiles.tile_at_location_equals(tiles.get_tile_location(snake_head.tilemap_location().column + column_offset2,
-            snake_head.tilemap_location().row + row_offset2),
+        return base * 2
+    elif tiles.tile_at_location_equals(tiles.get_tile_location(snake_head.tilemap_location().column + column_offset,
+            snake_head.tilemap_location().row + row_offset),
         assets.tile("""
             Wall
         """)):
-        return base2 * 2 + base2
+        return base * 2 + base
     else:
         return 0
 def getMaxReward(stateIdx2: number):
@@ -231,12 +213,12 @@ rowInc = 0
 colInc = 0
 index2 = 0
 snake_list: List[tiles.Location] = []
+snake_head: Sprite = None
+snake_food: Sprite = None
 discount_factor = 0
 learning_rate = 0
 quality_table: List[List[number]] = []
 speed_ms = 0
-snake_food: Sprite = None
-snake_head: Sprite = None
 info.set_score(0)
 setGlobalVariables()
 initQualityTable()
@@ -250,12 +232,12 @@ def on_on_update():
         current_action = doAction(randint(0, 3))
     else:
         current_action = callAgentForAction(current_state)
-    checkCollision()
-    eatFood()
     moveSnake()
     snake_head.say_text(getReward(getStateIndex(), current_action))
     update_quality_table(current_state,
         current_action,
         learning_rate,
         discount_factor)
+    checkCollision()
+    eatFood()
 game.on_update(on_on_update)
