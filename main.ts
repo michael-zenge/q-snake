@@ -87,13 +87,13 @@ function eatFood () {
         info.changeScoreBy(1)
     }
 }
-controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
-    doAction(0)
-})
-function update_quality_table (state_index2: number, action_index2: number, alpha: number, gamma: number) {
+function updateQualityTable (state_index2: number, action_index2: number, alpha: number, gamma: number) {
     quality_table[state_index2][action_index2] = (1 - alpha) * quality_table[state_index2][action_index2] + (alpha * getReward(getStateIndex(), action_index2) + alpha * gamma * getMaxReward(action_index2))
     console.log(quality_table[state_index2])
 }
+controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
+    doAction(0)
+})
 function getStateIndex () {
     if (snake_head.tilemapLocation().column >= snake_food.tilemapLocation().column && snake_head.tilemapLocation().row >= snake_food.tilemapLocation().row) {
         return 0 + (getStateIdx(0, 0, 256) + (getStateIdx(-1, 0, 64) + (getStateIdx(0, 1, 16) + (getStateIdx(1, 0, 4) + getStateIdx(0, -1, 1)))))
@@ -225,5 +225,5 @@ game.onUpdate(function () {
     }
     moveSnake()
     snake_head.sayText(getReward(getStateIndex(), current_action))
-    update_quality_table(current_state, current_action, learning_rate, discount_factor)
+    updateQualityTable(current_state, current_action, learning_rate, discount_factor)
 })
