@@ -1,72 +1,28 @@
 controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
-    apply_action(3)
+    doAction(3)
 })
+function getState2 (column_offset: number, row_offset: number, base: number) {
+    if (snake_head.tilemapLocation().column + column_offset == snake_food.tilemapLocation().column && snake_head.tilemapLocation().row + row_offset == snake_food.tilemapLocation().row) {
+        return base
+    } else if (tiles.tileAtLocationEquals(tiles.getTileLocation(snake_head.tilemapLocation().column + column_offset, snake_head.tilemapLocation().row + row_offset), assets.tile`myTile`)) {
+        return base * 2
+    } else if (tiles.tileAtLocationEquals(tiles.getTileLocation(snake_head.tilemapLocation().column + column_offset, snake_head.tilemapLocation().row + row_offset), assets.tile`Wall`)) {
+        return base * 2 + base
+    } else {
+        return 0
+    }
+}
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
     if (speed_ms < 1000) {
         speed_ms = speed_ms + 50
     }
 })
-function get_reward (stateIdx: number, actionIdx: number) {
-    if (stateIdx >= 3072) {
-        return get_reward_with_location_offset(stateIdx, actionIdx, 3072, 2, 1)
-    } else if (stateIdx >= 2048) {
-        return get_reward_with_location_offset(stateIdx, actionIdx, 2048, 2, 0)
-    } else if (stateIdx >= 1024) {
-        return get_reward_with_location_offset(stateIdx, actionIdx, 1024, 3, 0)
-    } else {
-        return get_reward_with_location_offset(stateIdx, actionIdx, 0, 3, 1)
-    }
-}
-function do_Q_update (stateIdx22: number, actionIdx2: number, alpha: number, gamma: number) {
-    quality_table[stateIdx22][actionIdx2] = (1 - alpha) * quality_table[stateIdx22][actionIdx2] + (alpha * get_reward(get_state_idx(), actionIdx2) + alpha * gamma * getMaxReward(actionIdx2))
-    console.log(quality_table[stateIdx22])
-}
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     if (speed_ms > 50) {
         speed_ms = speed_ms - 50
     }
 })
-function move_snake () {
-    index2 = 0
-    while (index2 <= listSnake.length - 1) {
-        if (index2 == 0) {
-            tiles.setTileAt(listSnake[index2], assets.tile`myTile0`)
-        }
-        if (index2 == listSnake.length - 1) {
-            listSnake[index2] = tiles.getTileLocation(listSnake[index2].column + colInc, listSnake[index2].row + rowInc)
-            tiles.placeOnTile(snake_head, listSnake[index2])
-        } else {
-            listSnake[index2] = tiles.getTileLocation(listSnake[index2 + 1].column, listSnake[index2 + 1].row)
-            tiles.setTileAt(listSnake[index2], assets.tile`myTile`)
-        }
-        index2 += 1
-    }
-}
-function reset_snake () {
-    tiles.setCurrentTilemap(tilemap`level1`)
-    tiles.placeOnTile(snake_food, tiles.getTileLocation(randint(2, 11), randint(2, 9)))
-    listSnake = []
-    listSnake.unshift(tiles.getTileLocation(4, 4))
-    tiles.placeOnTile(snake_head, listSnake[0])
-    listSnake.unshift(snake_head.tilemapLocation())
-    apply_action(2)
-}
-controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
-    apply_action(1)
-})
-function apply_Q_action (StateIdx: number) {
-    iMaxIdx = 0
-    for (let index3 = 0; index3 <= 4; index3++) {
-        if (quality_table[StateIdx][index3] > quality_table[StateIdx][iMaxIdx]) {
-            iMaxIdx = index3
-        }
-    }
-    return apply_action(iMaxIdx)
-}
-controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
-    apply_action(0)
-})
-function init_quality_table () {
+function initQualityTable () {
     quality_table = []
     for (let index = 0; index < 4096; index++) {
         quality_table.push([
@@ -77,36 +33,21 @@ function init_quality_table () {
         ])
     }
 }
-function getState (colOffset: number, rowOffset: number, base: number) {
-    if (snake_head.tilemapLocation().column + colOffset == snake_food.tilemapLocation().column && snake_head.tilemapLocation().row + rowOffset == snake_food.tilemapLocation().row) {
-        return base
-    } else if (tiles.tileAtLocationEquals(tiles.getTileLocation(snake_head.tilemapLocation().column + colOffset, snake_head.tilemapLocation().row + rowOffset), assets.tile`myTile`)) {
-        return base * 2
-    } else if (tiles.tileAtLocationEquals(tiles.getTileLocation(snake_head.tilemapLocation().column + colOffset, snake_head.tilemapLocation().row + rowOffset), assets.tile`Wall`)) {
-        return base * 2 + base
+function getReward (state_index: number, action_index: number) {
+    if (state_index >= 3072) {
+        return getRewardWithLocationOffset(state_index, action_index, 3072, 2, 1)
+    } else if (state_index >= 2048) {
+        return getRewardWithLocationOffset(state_index, action_index, 2048, 2, 0)
+    } else if (state_index >= 1024) {
+        return getRewardWithLocationOffset(state_index, action_index, 1024, 3, 0)
     } else {
-        return 0
+        return getRewardWithLocationOffset(state_index, action_index, 0, 3, 1)
     }
 }
-controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
-    apply_action(2)
+controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
+    doAction(1)
 })
-function getMaxReward (stateIdx2: number) {
-    return Math.max(Math.max(quality_table[stateIdx2][0], quality_table[0][stateIdx2]), Math.max(quality_table[0][2], quality_table[stateIdx2][3]))
-}
-function get_state_idx () {
-    if (snake_head.tilemapLocation().column >= snake_food.tilemapLocation().column && snake_head.tilemapLocation().row >= snake_food.tilemapLocation().row) {
-        return 0 + (getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1)))))
-    } else if (snake_head.tilemapLocation().column < snake_food.tilemapLocation().column && snake_head.tilemapLocation().row >= snake_food.tilemapLocation().row) {
-        return 1024 + (getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1)))))
-    } else if (snake_head.tilemapLocation().column < snake_food.tilemapLocation().column && snake_head.tilemapLocation().row < snake_food.tilemapLocation().row) {
-        return 2048 + (getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1)))))
-    } else if (snake_head.tilemapLocation().column >= snake_food.tilemapLocation().column && snake_head.tilemapLocation().row < snake_food.tilemapLocation().row) {
-        return 3072 + (getState(0, 0, 256) + (getState(-1, 0, 64) + (getState(0, 1, 16) + (getState(1, 0, 4) + getState(0, -1, 1)))))
-    }
-    return 0
-}
-function set_global_variables () {
+function setGlobalVariables () {
     speed_ms = 350
     learning_rate = 1
     discount_factor = 0.5
@@ -148,7 +89,63 @@ function set_global_variables () {
         `, SpriteKind.Player)
     scene.cameraFollowSprite(snake_head)
 }
-function get_reward_with_location_offset (state_index: number, action_index: number, index_offset: number, ref_action_1: number, ref_action_2: number) {
+function eatFood () {
+    if (snake_head.overlapsWith(snake_food)) {
+        while (true) {
+            tiles.placeOnTile(snake_food, tiles.getTileLocation(randint(2, 11), randint(2, 9)))
+            if (!(snake_head.overlapsWith(snake_food)) && !(tiles.tileAtLocationEquals(snake_food.tilemapLocation(), assets.tile`myTile`))) {
+                break;
+            }
+        }
+        snake_list.unshift(snake_head.tilemapLocation())
+        info.changeScoreBy(1)
+    }
+}
+controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
+    doAction(0)
+})
+function update_quality_table (state_index: number, action_index: number, alpha: number, gamma: number) {
+    quality_table[state_index][action_index] = (1 - alpha) * quality_table[state_index][action_index] + (alpha * getReward(getStateIndex(), action_index) + alpha * gamma * getMaxReward(action_index))
+    console.log(quality_table[state_index])
+}
+function getStateIndex () {
+    if (snake_head.tilemapLocation().column >= snake_food.tilemapLocation().column && snake_head.tilemapLocation().row >= snake_food.tilemapLocation().row) {
+        return 0 + (getStateIdx(0, 0, 256) + (getStateIdx(-1, 0, 64) + (getStateIdx(0, 1, 16) + (getStateIdx(1, 0, 4) + getStateIdx(0, -1, 1)))))
+    } else if (snake_head.tilemapLocation().column < snake_food.tilemapLocation().column && snake_head.tilemapLocation().row >= snake_food.tilemapLocation().row) {
+        return 1024 + (getStateIdx(0, 0, 256) + (getStateIdx(-1, 0, 64) + (getStateIdx(0, 1, 16) + (getStateIdx(1, 0, 4) + getStateIdx(0, -1, 1)))))
+    } else if (snake_head.tilemapLocation().column < snake_food.tilemapLocation().column && snake_head.tilemapLocation().row < snake_food.tilemapLocation().row) {
+        return 2048 + (getStateIdx(0, 0, 256) + (getStateIdx(-1, 0, 64) + (getStateIdx(0, 1, 16) + (getStateIdx(1, 0, 4) + getStateIdx(0, -1, 1)))))
+    } else if (snake_head.tilemapLocation().column >= snake_food.tilemapLocation().column && snake_head.tilemapLocation().row < snake_food.tilemapLocation().row) {
+        return 3072 + (getStateIdx(0, 0, 256) + (getStateIdx(-1, 0, 64) + (getStateIdx(0, 1, 16) + (getStateIdx(1, 0, 4) + getStateIdx(0, -1, 1)))))
+    }
+    return 0
+}
+function moveSnake () {
+    index2 = 0
+    while (index2 <= snake_list.length - 1) {
+        if (index2 == 0) {
+            tiles.setTileAt(snake_list[index2], assets.tile`myTile0`)
+        }
+        if (index2 == snake_list.length - 1) {
+            snake_list[index2] = tiles.getTileLocation(snake_list[index2].column + colInc, snake_list[index2].row + rowInc)
+            tiles.placeOnTile(snake_head, snake_list[index2])
+        } else {
+            snake_list[index2] = tiles.getTileLocation(snake_list[index2 + 1].column, snake_list[index2 + 1].row)
+            tiles.setTileAt(snake_list[index2], assets.tile`myTile`)
+        }
+        index2 += 1
+    }
+}
+function resetSnake () {
+    tiles.setCurrentTilemap(tilemap`level1`)
+    tiles.placeOnTile(snake_food, tiles.getTileLocation(randint(2, 11), randint(2, 9)))
+    snake_list = []
+    snake_list.unshift(tiles.getTileLocation(4, 4))
+    tiles.placeOnTile(snake_head, snake_list[0])
+    snake_list.unshift(snake_head.tilemapLocation())
+    doAction(2)
+}
+function getRewardWithLocationOffset (state_index: number, action_index: number, index_offset: number, ref_action_1: number, ref_action_2: number) {
     if (state_index - index_offset >= 512) {
         return -10
     } else if (state_index - index_offset >= 256) {
@@ -159,7 +156,31 @@ function get_reward_with_location_offset (state_index: number, action_index: num
         return -1
     }
 }
-function apply_action (Idx: number) {
+function checkCollision () {
+    if (tiles.tileAtLocationEquals(snake_head.tilemapLocation(), assets.tile`Wall`) || tiles.tileAtLocationEquals(snake_head.tilemapLocation(), assets.tile`myTile`)) {
+        info.changeScoreBy(1)
+        pause(200)
+        resetSnake()
+    }
+}
+controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
+    doAction(2)
+})
+function getStateIdx (column_offset: number, row_offset: number, base: number) {
+    if (snake_head.tilemapLocation().column + column_offset == snake_food.tilemapLocation().column && snake_head.tilemapLocation().row + row_offset == snake_food.tilemapLocation().row) {
+        return base
+    } else if (tiles.tileAtLocationEquals(tiles.getTileLocation(snake_head.tilemapLocation().column + column_offset, snake_head.tilemapLocation().row + row_offset), assets.tile`myTile`)) {
+        return base * 2
+    } else if (tiles.tileAtLocationEquals(tiles.getTileLocation(snake_head.tilemapLocation().column + column_offset, snake_head.tilemapLocation().row + row_offset), assets.tile`Wall`)) {
+        return base * 2 + base
+    } else {
+        return 0
+    }
+}
+function getMaxReward (stateIdx2: number) {
+    return Math.max(Math.max(quality_table[stateIdx2][0], quality_table[0][stateIdx2]), Math.max(quality_table[0][2], quality_table[stateIdx2][3]))
+}
+function doAction (Idx: number) {
     if (Idx == 3) {
         colInc = 0
         rowInc = -1
@@ -180,53 +201,43 @@ function apply_action (Idx: number) {
         return -1
     }
 }
-function eat_food () {
-    if (snake_head.overlapsWith(snake_food)) {
-        while (true) {
-            tiles.placeOnTile(snake_food, tiles.getTileLocation(randint(2, 11), randint(2, 9)))
-            if (!(snake_head.overlapsWith(snake_food)) && !(tiles.tileAtLocationEquals(snake_food.tilemapLocation(), assets.tile`myTile`))) {
-                break;
-            }
+function callAgentForAction (state_index: number) {
+    iMaxIdx = 0
+    for (let index3 = 0; index3 <= 4; index3++) {
+        if (quality_table[state_index][index3] > quality_table[state_index][iMaxIdx]) {
+            iMaxIdx = index3
         }
-        listSnake.unshift(snake_head.tilemapLocation())
-        info.changeScoreBy(1)
     }
-}
-function check_collision () {
-    if (tiles.tileAtLocationEquals(snake_head.tilemapLocation(), assets.tile`Wall`) || tiles.tileAtLocationEquals(snake_head.tilemapLocation(), assets.tile`myTile`)) {
-        info.changeScoreBy(1)
-        pause(200)
-        reset_snake()
-    }
+    return doAction(iMaxIdx)
 }
 let current_action = 0
 let current_state = 0
-let discount_factor = 0
-let learning_rate = 0
 let iMaxIdx = 0
-let snake_food: Sprite = null
-let snake_head: Sprite = null
 let rowInc = 0
 let colInc = 0
-let listSnake: tiles.Location[] = []
 let index2 = 0
+let snake_list: tiles.Location[] = []
+let discount_factor = 0
+let learning_rate = 0
 let quality_table: number[][] = []
 let speed_ms = 0
+let snake_food: Sprite = null
+let snake_head: Sprite = null
 info.setScore(0)
-set_global_variables()
-init_quality_table()
-reset_snake()
+setGlobalVariables()
+initQualityTable()
+resetSnake()
 game.onUpdate(function () {
     pause(speed_ms)
-    current_state = get_state_idx()
+    current_state = getStateIndex()
     if (randint(0, 100) < 20) {
-        current_action = apply_action(randint(0, 3))
+        current_action = doAction(randint(0, 3))
     } else {
-        current_action = apply_Q_action(current_state)
+        current_action = callAgentForAction(current_state)
     }
-    check_collision()
-    eat_food()
-    move_snake()
-    snake_head.sayText(get_reward(get_state_idx(), current_action))
-    do_Q_update(current_state, current_action, learning_rate, discount_factor)
+    checkCollision()
+    eatFood()
+    moveSnake()
+    snake_head.sayText(getReward(getStateIndex(), current_action))
+    update_quality_table(current_state, current_action, learning_rate, discount_factor)
 })
