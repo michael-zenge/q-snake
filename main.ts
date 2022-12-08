@@ -11,17 +11,6 @@ controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
         speed_ms = speed_ms - 50
     }
 })
-function initQualityTable () {
-    quality_table = []
-    for (let index = 0; index < 4096; index++) {
-        quality_table.push([
-        0,
-        0,
-        0,
-        0
-        ])
-    }
-}
 function getReward (state_index: number, action_index: number) {
     if (state_index >= 3072) {
         return getRewardWithLocationOffset(state_index, action_index, 3072, 2, 1)
@@ -36,51 +25,9 @@ function getReward (state_index: number, action_index: number) {
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
     doAction(1)
 })
-function setGlobalVariables () {
-    speed_ms = 350
-    learning_rate = 0.2
-    discount_factor = 0.5
-    snake_food = sprites.create(img`
-        . . 2 2 2 2 2 2 2 2 2 2 2 2 . . 
-        . 2 2 2 2 2 2 2 2 2 2 2 2 2 2 . 
-        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
-        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
-        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
-        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
-        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
-        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
-        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
-        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
-        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
-        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
-        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
-        2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
-        . 2 2 2 2 2 2 2 2 2 2 2 2 2 2 . 
-        . . 2 2 2 2 2 2 2 2 2 2 2 2 . . 
-        `, SpriteKind.Food)
-    snake_head = sprites.create(img`
-        . . 7 7 7 7 7 7 7 7 7 7 7 7 . . 
-        . 7 7 7 7 7 7 7 7 7 7 7 7 7 7 . 
-        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-        7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
-        . 7 7 7 7 7 7 7 7 7 7 7 7 7 7 . 
-        . . 7 7 7 7 7 7 7 7 7 7 7 7 . . 
-        `, SpriteKind.Player)
-    scene.cameraFollowSprite(snake_head)
-}
 function eatFood () {
     if (snake_head.overlapsWith(snake_food)) {
-        while (snake_head.overlapsWith(snake_food) || tiles.tileAtLocationEquals(snake_food.tilemapLocation(), assets.tile`myTile`)) {
+        while (snake_head.overlapsWith(snake_food) || tiles.tileAtLocationEquals(snake_food.tilemapLocation(), body_tile)) {
             tiles.placeOnTile(snake_food, tiles.getTileLocation(randint(2, 11), randint(2, 9)))
         }
         snake_list.unshift(snake_head.tilemapLocation())
@@ -106,24 +53,39 @@ function getStateIndex () {
     }
     return 0
 }
+function initGame (food_img: Image, head_img: Image, body_img: Image, bgrd_img: Image, wall_img: Image) {
+    speed_ms = 350
+    snake_food = sprites.create(food_img, SpriteKind.Food)
+    snake_head = sprites.create(head_img, SpriteKind.Player)
+    scene.cameraFollowSprite(snake_head)
+    body_tile = body_img
+    bgrd_tile = bgrd_img
+    wall_tile = wall_img
+}
 function moveSnake () {
     index2 = 0
     while (index2 <= snake_list.length - 1) {
         if (index2 == 0) {
-            tiles.setTileAt(snake_list[index2], assets.tile`myTile0`)
+            tiles.setTileAt(snake_list[index2], bgrd_tile)
         }
         if (index2 == snake_list.length - 1) {
             snake_list[index2] = tiles.getTileLocation(snake_list[index2].column + colInc, snake_list[index2].row + rowInc)
             tiles.placeOnTile(snake_head, snake_list[index2])
         } else {
             snake_list[index2] = tiles.getTileLocation(snake_list[index2 + 1].column, snake_list[index2 + 1].row)
-            tiles.setTileAt(snake_list[index2], assets.tile`myTile`)
+            tiles.setTileAt(snake_list[index2], body_tile)
         }
         index2 += 1
     }
 }
-function resetSnake () {
+function resetSnakeGame () {
     tiles.setCurrentTilemap(tilemap`level1`)
+    for (let value of tiles.getTilesByType(assets.tile`Wall`)) {
+        tiles.setTileAt(value, wall_tile)
+    }
+    for (let value of tiles.getTilesByType(assets.tile`myTile0`)) {
+        tiles.setTileAt(value, bgrd_tile)
+    }
     tiles.placeOnTile(snake_food, tiles.getTileLocation(randint(2, 11), randint(2, 9)))
     snake_list = []
     snake_list.unshift(tiles.getTileLocation(4, 4))
@@ -143,10 +105,10 @@ function getRewardWithLocationOffset (state_index3: number, action_index3: numbe
     }
 }
 function checkCollision () {
-    if (tiles.tileAtLocationEquals(snake_head.tilemapLocation(), assets.tile`Wall`) || tiles.tileAtLocationEquals(snake_head.tilemapLocation(), assets.tile`myTile`)) {
+    if (tiles.tileAtLocationEquals(snake_head.tilemapLocation(), wall_tile) || tiles.tileAtLocationEquals(snake_head.tilemapLocation(), body_tile)) {
         info.changeScoreBy(1)
         pause(200)
-        resetSnake()
+        resetSnakeGame()
     }
 }
 controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
@@ -155,9 +117,9 @@ controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
 function getStateIdx (column_offset: number, row_offset: number, base: number) {
     if (snake_head.tilemapLocation().column + column_offset == snake_food.tilemapLocation().column && snake_head.tilemapLocation().row + row_offset == snake_food.tilemapLocation().row) {
         return base
-    } else if (tiles.tileAtLocationEquals(tiles.getTileLocation(snake_head.tilemapLocation().column + column_offset, snake_head.tilemapLocation().row + row_offset), assets.tile`myTile`)) {
+    } else if (tiles.tileAtLocationEquals(tiles.getTileLocation(snake_head.tilemapLocation().column + column_offset, snake_head.tilemapLocation().row + row_offset), body_tile)) {
         return base * 2
-    } else if (tiles.tileAtLocationEquals(tiles.getTileLocation(snake_head.tilemapLocation().column + column_offset, snake_head.tilemapLocation().row + row_offset), assets.tile`Wall`)) {
+    } else if (tiles.tileAtLocationEquals(tiles.getTileLocation(snake_head.tilemapLocation().column + column_offset, snake_head.tilemapLocation().row + row_offset), wall_tile)) {
         return base * 2 + base
     } else {
         return 0
@@ -196,23 +158,73 @@ function callAgentForAction (state_index4: number) {
     }
     return doAction(iMaxIdx)
 }
+function initQLearingEnv (alpha: number, gamma: number) {
+    learning_rate = alpha
+    discount_factor = gamma
+    quality_table = []
+    for (let index = 0; index < 4096; index++) {
+        quality_table.push([
+        0,
+        0,
+        0,
+        0
+        ])
+    }
+}
 let current_action = 0
 let current_state = 0
+let discount_factor = 0
+let learning_rate = 0
 let iMaxIdx = 0
 let rowInc = 0
 let colInc = 0
 let index2 = 0
-let snake_list: tiles.Location[] = []
-let snake_head: Sprite = null
-let snake_food: Sprite = null
-let discount_factor = 0
-let learning_rate = 0
+let wall_tile: Image = null
+let bgrd_tile: Image = null
 let quality_table: number[][] = []
+let snake_list: tiles.Location[] = []
+let body_tile: Image = null
+let snake_food: Sprite = null
+let snake_head: Sprite = null
 let speed_ms = 0
 info.setScore(-500)
-setGlobalVariables()
-initQualityTable()
-resetSnake()
+initQLearingEnv(0.2, 0.5)
+initGame(img`
+    . . 2 2 2 2 2 2 2 2 2 2 2 2 . . 
+    . 2 2 2 2 2 2 2 2 2 2 2 2 2 2 . 
+    2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+    2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+    2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+    2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+    2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+    2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+    2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+    2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+    2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+    2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+    2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+    2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 
+    . 2 2 2 2 2 2 2 2 2 2 2 2 2 2 . 
+    . . 2 2 2 2 2 2 2 2 2 2 2 2 . . 
+    `, img`
+    . . 7 7 7 7 7 7 7 7 7 7 7 7 . . 
+    . 7 7 7 7 7 7 7 7 7 7 7 7 7 7 . 
+    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+    7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 
+    . 7 7 7 7 7 7 7 7 7 7 7 7 7 7 . 
+    . . 7 7 7 7 7 7 7 7 7 7 7 7 . . 
+    `, myTiles.tile3, sprites.castle.tilePath5, sprites.dungeon.floorDark0)
+resetSnakeGame()
 game.onUpdate(function () {
     pause(speed_ms)
     checkCollision()
